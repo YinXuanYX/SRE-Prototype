@@ -46,8 +46,37 @@ CREATE TABLE IF NOT EXISTS energy_telemetry (
 -- Convert energy_telemetry to hypertable (1-day chunk interval is typical, but we can stick to defaults for prototype)
 SELECT create_hypertable('energy_telemetry', 'timestamp', if_not_exists => TRUE);
 
+-- Create Anomaly Alerts table (Time-series)
+CREATE TABLE IF NOT EXISTS anomaly_alerts (
+    timestamp TIMESTAMPTZ NOT NULL,
+    alert_id VARCHAR(50) NOT NULL,
+    device_id VARCHAR(100) NOT NULL,
+    device_name VARCHAR(100) NOT NULL,
+    zone VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,         -- sustained_load, over_current, offline_timeout, voltage_anomaly
+    severity VARCHAR(20) NOT NULL,     -- Critical, High, Medium
+    title TEXT NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    threshold DOUBLE PRECISION NOT NULL
+);
+
+SELECT create_hypertable('anomaly_alerts', 'timestamp', if_not_exists => TRUE);
+
+-- Create Zone Mappings table (Relational)
+CREATE TABLE IF NOT EXISTS zone_mappings (
+    id VARCHAR(100) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    floor VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,         -- Residential, Common Area, Utility
+    devices TEXT[] NOT NULL DEFAULT '{}',
+    tenant VARCHAR(255) NOT NULL DEFAULT 'Unassigned',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Create Indexes for performance query optimization
 CREATE INDEX IF NOT EXISTS idx_telemetry_device_time ON energy_telemetry (device_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_anomaly_device_time ON anomaly_alerts (device_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_anomaly_severity ON anomaly_alerts (severity, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
 -- Insert Mock Users for initial SSO authentication mapping
@@ -58,3 +87,11 @@ VALUES
     ('superadmin@example.com', 'David SuperAdmin', 'Super Admin'),
     ('support@example.com', 'Alex Support', 'Support')
 ON CONFLICT (email) DO NOTHING;
+
+-- Insert default zone mappings
+INSERT INTO zone_mappings (id, name, floor, type, devices, tenant)
+VALUES
+    ('zone-a1', 'Unit A-201', 'Level 2', 'Residential', ARRAY['device-aircon-01', 'device-fridge-01'], 'John Resident'),
+    ('zone-b1', 'Corridor B', 'Level 3', 'Common Area', ARRAY['device-pump-01'], 'Building Management'),
+    ('zone-lobby', 'Ground Lobby', 'Ground', 'Common Area', ARRAY['device-light-01', 'device-anomaly-timer'], 'Building Management')
+ON CONFLICT (id) DO NOTHING;

@@ -16,15 +16,23 @@ export interface ConsentRecord {
   timestamp: string;
 }
 
+export interface ApplianceOverrideRecord {
+  deviceId: string;
+  correctedLabel: string;
+  timestamp: string;
+}
+
 class SreOfflineDatabase extends Dexie {
   telemetryCache!: Table<TelemetryRecord>;
   consentSettings!: Table<ConsentRecord>;
+  applianceOverrides!: Table<ApplianceOverrideRecord>;
 
   constructor() {
     super('SreOfflineDatabase');
-    this.version(1).stores({
+    this.version(2).stores({
       telemetryCache: '++id, deviceId, timestamp',
-      consentSettings: 'consentType'
+      consentSettings: 'consentType',
+      applianceOverrides: 'deviceId'
     });
   }
 }

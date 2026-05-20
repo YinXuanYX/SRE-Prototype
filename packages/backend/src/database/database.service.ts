@@ -146,6 +146,12 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       return [newTelemetry] as T[];
     }
 
+    // Query 7: Insert Anomaly Alert
+    if (queryNormalized.includes('insert into anomaly_alerts')) {
+      this.logger.debug(`[Mock DB] Anomaly alert persisted to in-memory store.`);
+      return [] as T[];
+    }
+
     // Default Fallback
     return [] as T[];
   }
