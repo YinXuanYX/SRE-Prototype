@@ -1,0 +1,47 @@
+[
+  {
+    "id": "device-aircon-01",
+    "name": "Simulated Smart Plug - AirCon",
+    "type": "heavy-appliance",
+    "status": "Active",
+    "baseLoadKw": 1.5,
+    "varianceKw": 0.5,
+    "cycleMinutes": 15
+  },
+  {
+    "id": "device-fridge-01",
+    "name": "Simulated Smart Plug - Refrigerator",
+    "type": "appliance",
+    "status": "Active",
+    "baseLoadKw": 0.15,
+    "varianceKw": 0.05,
+    "cycleMinutes": 45
+  },
+  {
+    "id": "device-pump-01",
+    "name": "Simulated Smart Plug - Water Pump",
+    "type": "heavy-appliance",
+    "status": "Active",
+    "baseLoadKw": 2.2,
+    "varianceKw": 0.2,
+    "cycleMinutes": 10
+  },
+  {
+    "id": "device-light-01",
+    "name": "Simulated Smart Plug - Common Area Lights",
+    "type": "lighting",
+    "status": "Active",
+    "baseLoadKw": 0.3,
+    "varianceKw": 0.02,
+    "cycleMinutes": 120
+  },
+  {
+    "id": "device-anomaly-timer",
+    "name": "Simulated Smart Plug - Stuck Facility Timer",
+    "type": "anomaly-heavy",
+    "status": "Active",
+    "baseLoadKw": 4.5,
+    "varianceKw": 0.1,
+    "cycleMinutes": 9999
+  }
+]

@@ -1,0 +1,45 @@
+# Dependency directories
+node_modules/
+packages/*/node_modules/
+packages/*/*/node_modules/
+
+# Production builds
+dist/
+build/
+out/
+.next/
+
+# Logs and databases
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+lerna-debug.log*
+pgdata/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# Vite/TS build cache
+.svelte-kit
+.astro
+.turbo
+.parcel-cache
+node_modules/.cache
+.eslintcache

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: sre_timescaledb
+    environment:
+      - POSTGRES_DB=sre_db
+      - POSTGRES_USER=sre_admin
+      - POSTGRES_PASSWORD=sre_password_secure_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - sre_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  sre_postgres_data:
+    driver: local

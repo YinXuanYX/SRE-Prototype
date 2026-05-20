@@ -1,0 +1,14 @@
+{
+  "name": "sre-energy-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:backend": "npm run start:dev --workspace=packages/backend",
+    "dev:frontend": "npm run dev --workspace=packages/frontend",
+    "dev:simulator": "npm run start --workspace=packages/simulator",
+    "docker:db": "docker-compose up -d"
+  }
+}
