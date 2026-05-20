@@ -51,71 +51,65 @@ export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
   };
 
   return (
-    <div style={styles.card} className="card-premium">
+    <div style={s.card} className="surface-card animate-in">
       {/* Toast Notification */}
       {showToast && (
-        <div style={styles.toast}>
-          <CheckCircle2 size={16} />
+        <div style={s.toast}>
+          <CheckCircle2 size={14} color="var(--accent-emerald)" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      <div style={styles.header}>
+      <div style={s.header}>
         <div style={{
-          ...styles.iconContainer,
-          background: consentGranted ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+          ...s.iconContainer,
+          background: consentGranted ? 'rgba(16, 185, 129, 0.08)' : 'rgba(244, 63, 94, 0.08)',
           borderColor: consentGranted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)',
         }}>
           {consentGranted ? (
-            <ShieldCheck size={28} color="var(--accent-emerald)" />
+            <ShieldCheck size={20} color="var(--accent-emerald)" />
           ) : (
-            <ShieldAlert size={28} color="var(--accent-rose)" />
+            <ShieldAlert size={20} color="var(--accent-rose)" />
           )}
         </div>
         <div>
-          <h3 style={styles.title}>PDPA Privacy Consent</h3>
-          <p style={styles.statusLabel}>
-            Status:{' '}
+          <h3 style={s.title}>PDPA Consent Settings</h3>
+          <p style={s.statusLabel}>
+            Verification Status:{' '}
             <span style={{ color: consentGranted ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
-              {consentGranted ? 'AUTHORIZED (Opted-in)' : 'RESTRICTED (Opted-out)'}
+              {consentGranted ? 'Opted-In (Authorized)' : 'Opted-Out (Gated)'}
             </span>
           </p>
         </div>
       </div>
 
-      <p style={styles.bodyText}>
-        To comply with the <strong>Malaysian Personal Data Protection Act (PDPA)</strong>, we isolate private consumer habits. Unlocking appliance-level breakdown charts requires your explicit permission.
+      <p style={s.bodyText}>
+        To comply with the <strong>Malaysian Personal Data Protection Act (PDPA)</strong>, high-frequency appliance load signatures are separated and isolated by default.
       </p>
 
-      {/* Disclosed Items list */}
-      <div style={styles.featuresList}>
-        <h4 style={styles.listHeader}>What data signatures are captured & processed?</h4>
-        <ul style={styles.ul}>
-          <li style={styles.li}>
-            <span style={styles.bullet}>⚡</span>
-            <span><strong>High-frequency load peaks:</strong> Signal patterns indicating active heavy machinery (e.g. Air Conditioning).</span>
+      <div style={s.featuresList}>
+        <h4 style={s.listHeader}>What data signatures are captured?</h4>
+        <ul style={s.ul}>
+          <li style={s.li}>
+            <span style={s.bullet}>⚡</span>
+            <span><strong>Load Peak Extraction:</strong> ML signatures mapping device draw spikes to appliance types.</span>
           </li>
-          <li style={styles.li}>
-            <span style={styles.bullet}>🛡️</span>
-            <span><strong>Cryptographic separation:</strong> Landlords and property managers are permanently locked out of appliance signatures.</span>
-          </li>
-          <li style={styles.li}>
-            <span style={styles.bullet}>🔄</span>
-            <span><strong>Immediate Revocation:</strong> Revoking consent immediately terminates the backend signature processing queues.</span>
+          <li style={s.li}>
+            <span style={s.bullet}>🛡️</span>
+            <span><strong>Privacy Isolation:</strong> Landlords and property administrators remain restricted from individual appliance details.</span>
           </li>
         </ul>
       </div>
 
-      {/* Action Buttons */}
-      <div style={styles.actions}>
+      <div style={s.actions}>
         {consentGranted ? (
           <button
             onClick={() => handleUpdateConsent(false)}
             disabled={isLoading}
             className="btn-secondary"
-            style={{ width: '100%', justifyContent: 'center', borderColor: 'rgba(244, 63, 94, 0.4)', color: 'var(--accent-rose)' }}
+            style={{ width: '100%', justifyContent: 'center', borderColor: 'rgba(244, 63, 94, 0.2)', color: 'var(--accent-rose)' }}
           >
-            {isLoading ? 'Revoking permission...' : 'Revoke Appliance Monitoring Consent'}
+            {isLoading ? 'Revoking permission...' : 'Revoke Appliance Monitoring Permission'}
           </button>
         ) : (
           <button
@@ -124,7 +118,7 @@ export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
             className="btn-primary"
             style={{ width: '100%', justifyContent: 'center' }}
           >
-            {isLoading ? 'Activating security protocols...' : 'Agree & Enable Appliance-level Analysis'}
+            {isLoading ? 'Activating security protocols...' : 'Agree & Unlock Appliance Breakdown'}
           </button>
         )}
       </div>
@@ -132,92 +126,95 @@ export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
   );
 };
 
-const styles = {
+const s = {
   card: {
     position: 'relative',
     maxWidth: '560px',
     width: '100%',
-    margin: '20px auto',
-    textAlign: 'left',
+    margin: 'var(--space-md) auto 0 auto',
+    padding: 'var(--space-lg)',
   },
   header: {
     display: 'flex',
     alignItems: 'center',
-    gap: '16px',
-    marginBottom: '20px',
+    gap: 'var(--space-md)',
+    marginBottom: 'var(--space-md)',
   },
   iconContainer: {
     borderWidth: '1px',
     borderStyle: 'solid',
-    padding: '12px',
-    borderRadius: '14px',
+    width: '40px',
+    height: '40px',
+    borderRadius: 'var(--radius-md)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: '20px',
-    color: '#fff',
+    fontSize: '15px',
+    color: 'var(--text-primary)',
+    margin: 0,
+    fontWeight: 700,
   },
   statusLabel: {
-    fontSize: '13px',
+    fontSize: '11px',
     fontWeight: 600,
     marginTop: '2px',
+    color: 'var(--text-secondary)',
   },
   bodyText: {
-    fontSize: '14px',
+    fontSize: '12px',
     lineHeight: '1.6',
-    marginBottom: '20px',
+    marginBottom: 'var(--space-md)',
     color: 'var(--text-secondary)',
   },
   featuresList: {
-    background: 'rgba(0, 0, 0, 0.25)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
-    padding: '20px',
-    marginBottom: '24px',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: 'var(--radius-md)',
+    padding: 'var(--space-md)',
+    marginBottom: 'var(--space-lg)',
   },
   listHeader: {
-    fontSize: '13px',
+    fontSize: '11px',
     fontWeight: 700,
     textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.04em',
     color: 'var(--text-primary)',
-    marginBottom: '12px',
+    marginBottom: 'var(--space-sm)',
   },
   ul: {
     listStyleType: 'none',
   },
   li: {
-    fontSize: '13px',
+    fontSize: '12px',
     lineHeight: '1.5',
     color: 'var(--text-secondary)',
-    marginBottom: '10px',
+    marginBottom: '6px',
     display: 'flex',
     alignItems: 'flex-start',
-    gap: '8px',
+    gap: 'var(--space-sm)',
   },
   bullet: {
-    fontSize: '14px',
-    marginTop: '-2px',
+    fontSize: '12px',
   },
   actions: {
-    marginTop: '16px',
+    marginTop: 'var(--space-md)',
   },
   toast: {
     position: 'fixed',
-    bottom: '24px',
-    right: '24px',
-    background: '#12141f',
+    bottom: 'var(--space-lg)',
+    right: 'var(--space-lg)',
+    background: 'var(--bg-surface)',
     border: '1px solid var(--accent-emerald)',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-md)',
     padding: '12px 18px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px',
-    fontSize: '13px',
-    boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+    gap: 'var(--space-sm)',
+    fontSize: '12px',
+    boxShadow: 'var(--shadow-lg)',
     zIndex: 9999,
   },
 };

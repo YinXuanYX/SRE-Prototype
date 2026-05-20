@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { ThemeProvider } from './components/ThemeProvider';
 import { Login } from './components/Login';
 import { DashboardShell } from './components/DashboardShell';
 import { db } from './db/indexedDB';
@@ -97,18 +98,20 @@ function App() {
     }
   };
 
-  if (!token || !user) {
-    return <Login onLoginSuccess={handleLoginSuccess} />;
-  }
-
   return (
-    <DashboardShell
-      user={user}
-      onLogout={handleLogout}
-      recentTelemetry={recentTelemetry}
-      liveLogs={liveLogs}
-      socketStatus={socketStatus}
-    />
+    <ThemeProvider>
+      {(!token || !user) ? (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <DashboardShell
+          user={user}
+          onLogout={handleLogout}
+          recentTelemetry={recentTelemetry}
+          liveLogs={liveLogs}
+          socketStatus={socketStatus}
+        />
+      )}
+    </ThemeProvider>
   );
 }
 

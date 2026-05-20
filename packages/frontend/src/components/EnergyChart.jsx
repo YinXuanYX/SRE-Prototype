@@ -91,7 +91,7 @@ export const EnergyChart = ({ data }) => {
         <defs>
           {/* Neon Glow Linear Gradient for Area Chart */}
           <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--accent-blue)" stopOpacity="0.3" />
+            <stop offset="0%" stopColor="var(--accent-blue)" stopOpacity="0.25" />
             <stop offset="100%" stopColor="var(--accent-blue)" stopOpacity="0.0" />
           </linearGradient>
           {/* Glowing dot shadow filter */}
@@ -174,7 +174,7 @@ export const EnergyChart = ({ data }) => {
               cy={p.y}
               r={isHovered ? 6 : 3}
               fill={isHovered ? 'var(--accent-cyan)' : 'var(--accent-blue)'}
-              stroke="#0d0f19"
+              stroke="var(--bg-surface)"
               strokeWidth={isHovered ? 2 : 1}
               style={isHovered ? { filter: 'url(#glow)', transition: 'all 0.1s ease' } : {}}
             />
@@ -203,9 +203,7 @@ const styles = {
   container: {
     position: 'relative',
     width: '100%',
-    background: 'rgba(0, 0, 0, 0.2)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
+    background: 'transparent',
     padding: '16px 12px 8px 12px',
     boxSizing: 'border-box',
   },
@@ -214,7 +212,7 @@ const styles = {
     display: 'block',
   },
   gridLine: {
-    stroke: 'rgba(255, 255, 255, 0.05)',
+    stroke: 'var(--chart-grid)',
     strokeWidth: 1,
     strokeDasharray: '4 4',
   },
@@ -237,11 +235,11 @@ const styles = {
   },
   tooltip: {
     position: 'absolute',
-    background: '#111322',
-    border: '1px solid var(--accent-cyan)',
-    borderRadius: '8px',
+    background: 'var(--chart-tooltip-bg)',
+    border: '1px solid var(--border-primary)',
+    borderRadius: 'var(--radius-sm)',
     padding: '6px 10px',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+    boxShadow: 'var(--shadow-md)',
     pointerEvents: 'none',
     width: '100px',
     textAlign: 'center',
@@ -256,7 +254,7 @@ const styles = {
   tooltipVal: {
     fontSize: '13px',
     fontWeight: 700,
-    color: '#fff',
+    color: 'var(--text-primary)',
     marginTop: '2px',
   },
   emptyState: {
@@ -264,9 +262,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'rgba(0,0,0,0.15)',
-    border: '1px dashed var(--border-color)',
-    borderRadius: '12px',
+    background: 'var(--bg-input)',
+    border: '1px dashed var(--border-primary)',
+    borderRadius: 'var(--radius-lg)',
     color: 'var(--text-muted)',
     fontSize: '13px',
   },

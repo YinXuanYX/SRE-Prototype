@@ -99,22 +99,23 @@ export const ZoneMapper = ({ user }) => {
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'Residential': return { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)' };
-      case 'Common Area': return { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.2)', color: 'var(--accent-amber)' };
-      case 'Utility': return { bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald)' };
-      default: return { bg: 'rgba(255,255,255,0.05)', border: 'var(--border-color)', color: 'var(--text-secondary)' };
+      case 'Residential': return { bg: 'rgba(59, 130, 246, 0.08)', border: 'rgba(59, 130, 246, 0.2)', color: 'var(--accent-blue)' };
+      case 'Common Area': return { bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.2)', color: 'var(--accent-amber)' };
+      case 'Utility': return { bg: 'rgba(16, 185, 129, 0.08)', border: 'rgba(16, 185, 129, 0.2)', color: 'var(--accent-emerald)' };
+      default: return { bg: 'var(--bg-input)', border: 'var(--border-primary)', color: 'var(--text-secondary)' };
     }
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.headerRow}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
           <Layers size={18} color="var(--accent-cyan)" />
           <h3 style={{ margin: 0, fontSize: '16px' }}>Digital Sub-Metering Zone Mapper</h3>
         </div>
         <button
           onClick={() => setShowCreateForm(!showCreateForm)}
+          className="btn-secondary"
           style={styles.addBtn}
         >
           <Plus size={14} style={{ marginRight: '4px' }} />
@@ -124,7 +125,7 @@ export const ZoneMapper = ({ user }) => {
 
       {/* Create Zone Form */}
       {showCreateForm && (
-        <form onSubmit={handleCreateZone} style={styles.createForm}>
+        <form onSubmit={handleCreateZone} style={styles.createForm} className="animate-in">
           <div style={styles.formGrid}>
             <div style={styles.inputGroup}>
               <label style={styles.label}>Zone / Room Name</label>
@@ -134,7 +135,7 @@ export const ZoneMapper = ({ user }) => {
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder="e.g. Unit C-305"
                 required
-                style={styles.input}
+                className="input-field"
               />
             </div>
             <div style={styles.inputGroup}>
@@ -145,7 +146,7 @@ export const ZoneMapper = ({ user }) => {
                 onChange={(e) => setFormFloor(e.target.value)}
                 placeholder="e.g. Level 3"
                 required
-                style={styles.input}
+                className="input-field"
               />
             </div>
             <div style={styles.inputGroup}>
@@ -153,7 +154,8 @@ export const ZoneMapper = ({ user }) => {
               <select
                 value={formType}
                 onChange={(e) => setFormType(e.target.value)}
-                style={styles.select}
+                className="input-field"
+                style={{ appearance: 'none', background: 'var(--bg-elevated)', cursor: 'pointer' }}
               >
                 <option value="Residential">Residential</option>
                 <option value="Common Area">Common Area</option>
@@ -167,7 +169,7 @@ export const ZoneMapper = ({ user }) => {
                 value={formTenant}
                 onChange={(e) => setFormTenant(e.target.value)}
                 placeholder="e.g. Jane Doe"
-                style={styles.input}
+                className="input-field"
               />
             </div>
           </div>
@@ -178,7 +180,7 @@ export const ZoneMapper = ({ user }) => {
               value={formDevices}
               onChange={(e) => setFormDevices(e.target.value)}
               placeholder="e.g. device-aircon-01, device-fridge-01"
-              style={styles.input}
+              className="input-field"
             />
           </div>
           <button type="submit" disabled={creating} className="btn-primary" style={styles.submitBtn}>
@@ -203,15 +205,15 @@ export const ZoneMapper = ({ user }) => {
           <p>No zones configured. Click "Register New Zone" to begin mapping.</p>
         </div>
       ) : (
-        <div style={styles.zoneGrid}>
+        <div style={styles.zoneGrid} className="stagger-children">
           {zones.map(zone => {
             const typeStyle = getTypeColor(zone.type);
             return (
-              <div key={zone.id} style={styles.zoneCard}>
+              <div key={zone.id} className="surface-card" style={styles.zoneCard}>
                 <div style={styles.zoneHeader}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                     <Home size={16} color={typeStyle.color} />
-                    <h4 style={{ margin: 0, fontSize: '14px', color: '#fff' }}>{zone.name}</h4>
+                    <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)' }}>{zone.name}</h4>
                   </div>
                   <button onClick={() => handleDeleteZone(zone.id)} style={styles.deleteBtn} title="Remove zone">
                     <Trash2 size={12} />
@@ -259,68 +261,42 @@ const styles = {
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: 'var(--space-lg)',
   },
   headerRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 'var(--space-sm)',
   },
   addBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    background: 'rgba(6, 182, 212, 0.08)',
-    border: '1px solid rgba(6, 182, 212, 0.2)',
-    color: 'var(--accent-cyan)',
     padding: '6px 14px',
-    borderRadius: '8px',
     fontSize: '12px',
     fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
   },
   createForm: {
-    background: 'rgba(0,0,0,0.2)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
-    padding: '20px',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border-primary)',
+    borderRadius: 'var(--radius-lg)',
+    padding: 'var(--space-lg)',
     display: 'flex',
     flexDirection: 'column',
-    gap: '14px',
+    gap: 'var(--space-md)',
   },
   formGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: '12px',
+    gap: 'var(--space-md)',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    gap: 'var(--space-xs)',
   },
   label: {
     fontSize: '11px',
     color: 'var(--text-secondary)',
     fontWeight: 500,
-  },
-  input: {
-    background: 'rgba(0,0,0,0.3)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '6px',
-    padding: '8px 10px',
-    color: '#fff',
-    fontSize: '12px',
-    outline: 'none',
-  },
-  select: {
-    background: 'rgba(0,0,0,0.3)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '6px',
-    padding: '8px 10px',
-    color: '#fff',
-    fontSize: '12px',
-    outline: 'none',
-    cursor: 'pointer',
   },
   submitBtn: {
     padding: '8px 16px',
@@ -332,32 +308,29 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'rgba(0,0,0,0.1)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border-primary)',
+    borderRadius: 'var(--radius-lg)',
   },
   emptyState: {
-    padding: '30px',
+    padding: 'var(--space-xl)',
     textAlign: 'center',
     color: 'var(--text-muted)',
     fontSize: '13px',
-    background: 'rgba(0,0,0,0.1)',
-    border: '1px dashed var(--border-color)',
-    borderRadius: '12px',
+    background: 'var(--bg-input)',
+    border: '1px dashed var(--border-primary)',
+    borderRadius: 'var(--radius-lg)',
   },
   zoneGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '14px',
+    gap: 'var(--space-md)',
   },
   zoneCard: {
-    background: 'rgba(0, 0, 0, 0.15)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
-    padding: '16px',
+    padding: 'var(--space-lg)',
     display: 'flex',
     flexDirection: 'column',
-    gap: '10px',
+    gap: 'var(--space-md)',
   },
   zoneHeader: {
     display: 'flex',
@@ -372,8 +345,8 @@ const styles = {
     padding: '4px',
     display: 'flex',
     alignItems: 'center',
-    opacity: 0.6,
-    transition: 'opacity 0.2s',
+    opacity: 0.7,
+    transition: 'opacity var(--duration-fast) ease',
   },
   zoneMetaRow: {
     display: 'flex',
@@ -389,7 +362,7 @@ const styles = {
     fontWeight: 700,
     textTransform: 'uppercase',
     padding: '2px 6px',
-    borderRadius: '4px',
+    borderRadius: 'var(--radius-xs)',
   },
   zoneTenant: {
     display: 'flex',
@@ -403,14 +376,14 @@ const styles = {
   tenantName: {
     fontSize: '12px',
     fontWeight: 600,
-    color: '#fff',
+    color: 'var(--text-primary)',
   },
   deviceTagList: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '6px',
-    borderTop: '1px dashed var(--border-color)',
-    paddingTop: '10px',
+    borderTop: '1px dashed var(--border-subtle)',
+    paddingTop: 'var(--space-md)',
   },
   deviceTag: {
     fontSize: '10px',
@@ -419,7 +392,7 @@ const styles = {
     border: '1px solid rgba(59, 130, 246, 0.15)',
     color: 'var(--accent-blue)',
     padding: '3px 8px',
-    borderRadius: '4px',
+    borderRadius: 'var(--radius-xs)',
     display: 'flex',
     alignItems: 'center',
   },

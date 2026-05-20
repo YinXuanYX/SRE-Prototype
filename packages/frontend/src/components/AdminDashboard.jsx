@@ -14,417 +14,244 @@ import {
 } from 'lucide-react';
 
 export const AdminDashboard = ({ user, recentTelemetry, liveLogs, socketStatus }) => {
-  // Seed initial mock alarms for View B (Issue Tracker)
   const [alarms, setAlarms] = useState([
-    { 
-      id: 'AL-091', 
-      title: 'Common Area Facility Timer Failure', 
-      zone: 'Ground Lobby', 
-      severity: 'Critical', 
-      type: 'Stuck Timer', 
-      status: 'Open', 
-      assignedTo: 'None',
-      notes: ''
-    },
-    { 
-      id: 'AL-092', 
-      title: 'Sustained Heavy Appliance Draw (Possible Crypto Mining)', 
-      zone: 'Zone B - Room 302', 
-      severity: 'High', 
-      type: 'Over-Current Draw', 
-      status: 'In Progress', 
-      assignedTo: 'Technician Kumar',
-      notes: ''
-    },
-    { 
-      id: 'AL-093', 
-      title: 'Smart Meter Node Heartbeat Offline Timeout', 
-      zone: 'Zone A - Room 105', 
-      severity: 'Medium', 
-      type: 'Offline Timeout', 
-      status: 'Resolved', 
-      assignedTo: 'Technician Lee',
-      notes: 'Plug re-seated. Wifi signal stabilized.'
-    }
+    { id: 'AL-091', title: 'Common Area Facility Timer Failure', zone: 'Ground Lobby', severity: 'Critical', type: 'Stuck Timer', status: 'Open', assignedTo: 'None', notes: '' },
+    { id: 'AL-092', title: 'Sustained Heavy Appliance Draw (Possible Crypto Mining)', zone: 'Zone B - Room 302', severity: 'High', type: 'Over-Current Draw', status: 'In Progress', assignedTo: 'Technician Kumar', notes: '' },
+    { id: 'AL-093', title: 'Smart Meter Node Heartbeat Offline Timeout', zone: 'Zone A - Room 105', severity: 'Medium', type: 'Offline Timeout', status: 'Resolved', assignedTo: 'Technician Lee', notes: 'Plug re-seated. Wifi signal stabilized.' }
   ]);
 
-  // Immutable Administrative Audit Log state (appends actions dynamically)
   const [auditLogs, setAuditLogs] = useState([
     { id: 1, timestamp: '12:00:10 AM', actor: 'Sarah Admin', action: 'Created task assignment for Alarm AL-092 to Technician Kumar.' },
     { id: 2, timestamp: '12:03:45 AM', actor: 'Sarah Admin', action: 'Resolved Alarm AL-093. Completion note: Plug re-seated. Wifi signal stabilized.' }
   ]);
 
-  // Live anomaly alert count (from WebSocket)
   const [liveAnomalyCount, setLiveAnomalyCount] = useState(0);
-
-  // States to manage the resolution form input
   const [resolvingAlarmId, setResolvingAlarmId] = useState(null);
   const [resolutionNote, setResolutionNote] = useState('');
-
-  // Active tab: 'issues' or 'zones'
   const [activeTab, setActiveTab] = useState('issues');
-
-  // Track seen anomaly IDs to prevent duplicates
   const seenAlertIds = useRef(new Set());
 
-  // --- Live WebSocket listener for anomaly_alert events ---
   useEffect(() => {
     const socket = new WebSocket('ws://localhost:3000/telemetry');
-
     socket.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
         if (payload.event === 'anomaly_alert') {
           const alert = payload.data;
-
-          // Deduplicate by alert ID
           if (seenAlertIds.current.has(alert.id)) return;
           seenAlertIds.current.add(alert.id);
-
           setLiveAnomalyCount(prev => prev + 1);
-
-          // Inject the anomaly into the alarm board as a new Open alarm
-          const newAlarm = {
-            id: alert.id,
-            title: alert.title,
-            zone: alert.zone,
-            severity: alert.severity,
-            type: alert.type,
-            status: 'Open',
-            assignedTo: 'None',
-            notes: `Auto-detected: ${alert.type}. Value: ${alert.value}, Threshold: ${alert.threshold}`
-          };
-
-          setAlarms(prev => [newAlarm, ...prev]);
-
-          // Append to audit log
-          const timestamp = new Date().toLocaleTimeString();
-          setAuditLogs(logs => [
-            {
-              id: Date.now(),
-              timestamp,
-              actor: 'System (Anomaly Engine)',
-              action: `Auto-generated alarm ${alert.id}: ${alert.title} [${alert.severity}]`
-            },
-            ...logs
-          ]);
+          setAlarms(prev => [{
+            id: alert.id, title: alert.title, zone: alert.zone,
+            severity: alert.severity, type: alert.type, status: 'Open',
+            assignedTo: 'None', notes: `Auto-detected: ${alert.type}. Value: ${alert.value}, Threshold: ${alert.threshold}`
+          }, ...prev]);
+          setAuditLogs(logs => [{
+            id: Date.now(), timestamp: new Date().toLocaleTimeString(),
+            actor: 'System (Anomaly Engine)',
+            action: `Auto-generated alarm ${alert.id}: ${alert.title} [${alert.severity}]`
+          }, ...logs]);
         }
-      } catch (err) {
-        // Ignore non-anomaly messages
-      }
+      } catch (err) {}
     };
-
-    return () => {
-      socket.close();
-    };
+    return () => socket.close();
   }, []);
 
-  // Calculate building stats (View A) from live telemetry
   const calculateStats = () => {
-    let activeCount = 0;
-    let totalKw = 0;
-    let avgVoltage = 240;
+    let activeCount = 0, totalKw = 0, avgVoltage = 240;
     const devs = Object.values(recentTelemetry);
-    devs.forEach(dev => {
-      if (dev.status === 'Active') {
-        activeCount++;
-        totalKw += dev.loadKw;
-      }
-    });
-    if (devs.length > 0) {
-      avgVoltage = Math.round(devs.reduce((sum, d) => sum + d.voltage, 0) / devs.length);
-    }
-
-    return {
-      activeCount,
-      totalKw: totalKw.toFixed(2),
-      averageVoltage: avgVoltage
-    };
+    devs.forEach(dev => { if (dev.status === 'Active') { activeCount++; totalKw += dev.loadKw; } });
+    if (devs.length > 0) avgVoltage = Math.round(devs.reduce((s, d) => s + d.voltage, 0) / devs.length);
+    return { activeCount, totalKw: totalKw.toFixed(2), averageVoltage: avgVoltage };
   };
-
   const stats = calculateStats();
 
   const handleAssignTask = (alarmId, technician) => {
     setAlarms(prev => prev.map(a => {
       if (a.id === alarmId) {
-        const updated = { ...a, status: 'In Progress', assignedTo: technician };
-        
-        const timestamp = new Date().toLocaleTimeString();
-        setAuditLogs(logs => [
-          {
-            id: Date.now(),
-            timestamp,
-            actor: `${user.displayName} (Admin)`,
-            action: `Assigned Alarm ${alarmId} to ${technician}.`
-          },
-          ...logs
-        ]);
-
-        return updated;
+        setAuditLogs(logs => [{ id: Date.now(), timestamp: new Date().toLocaleTimeString(), actor: `${user.displayName} (Admin)`, action: `Assigned Alarm ${alarmId} to ${technician}.` }, ...logs]);
+        return { ...a, status: 'In Progress', assignedTo: technician };
       }
       return a;
     }));
   };
 
-  const triggerResolveForm = (alarmId) => {
-    setResolvingAlarmId(alarmId);
-    setResolutionNote('');
-  };
+  const triggerResolveForm = (alarmId) => { setResolvingAlarmId(alarmId); setResolutionNote(''); };
 
   const handleResolveAlarmSubmit = (e) => {
     e.preventDefault();
     if (!resolutionNote.trim()) return;
-
     setAlarms(prev => prev.map(a => {
       if (a.id === resolvingAlarmId) {
-        const updated = { ...a, status: 'Resolved', notes: resolutionNote };
-
-        const timestamp = new Date().toLocaleTimeString();
-        setAuditLogs(logs => [
-          {
-            id: Date.now(),
-            timestamp,
-            actor: `${user.displayName} (Admin)`,
-            action: `Resolved Alarm ${resolvingAlarmId}. Completion note: ${resolutionNote}`
-          },
-          ...logs
-        ]);
-
-        return updated;
+        setAuditLogs(logs => [{ id: Date.now(), timestamp: new Date().toLocaleTimeString(), actor: `${user.displayName} (Admin)`, action: `Resolved Alarm ${resolvingAlarmId}. Completion note: ${resolutionNote}` }, ...logs]);
+        return { ...a, status: 'Resolved', notes: resolutionNote };
       }
       return a;
     }));
-
     setResolvingAlarmId(null);
   };
 
+  const getSeverityColor = (sev) => {
+    if (sev === 'Critical') return 'var(--accent-rose)';
+    if (sev === 'High') return 'var(--accent-amber)';
+    return 'var(--accent-blue)';
+  };
+
   return (
-    <div style={styles.container}>
-      {/* View A: Operational Metrics Grid */}
-      <section style={styles.metricsGrid}>
-        <div className="card-premium" style={styles.metricCard}>
-          <div style={{ ...styles.iconBadge, background: 'rgba(59, 130, 246, 0.1)' }}>
-            <Building size={20} color="var(--accent-blue)" />
+    <div style={s.container}>
+      {/* ── Metrics Strip ── */}
+      <section style={s.metricsGrid} className="stagger-children">
+        <div className="surface-card" style={s.metricCard}>
+          <div style={{ ...s.iconBadge, background: 'rgba(59, 130, 246, 0.08)' }}>
+            <Building size={18} color="var(--accent-blue)" />
           </div>
           <div>
-            <div style={styles.metricLabel}>Total Building Load</div>
-            <div style={styles.metricVal}>{stats.totalKw} <span style={styles.metricUnit}>kW</span></div>
+            <div style={s.metricLabel}>Building Load</div>
+            <div style={s.metricVal}>{stats.totalKw} <span style={s.metricUnit}>kW</span></div>
           </div>
         </div>
-
-        <div className="card-premium" style={styles.metricCard}>
-          <div style={{ ...styles.iconBadge, background: 'rgba(16, 185, 129, 0.1)' }}>
-            <TrendingUp size={20} color="var(--accent-emerald)" />
+        <div className="surface-card" style={s.metricCard}>
+          <div style={{ ...s.iconBadge, background: 'rgba(16, 185, 129, 0.08)' }}>
+            <TrendingUp size={18} color="var(--accent-emerald)" />
           </div>
           <div>
-            <div style={styles.metricLabel}>Active Smart Plugs</div>
-            <div style={styles.metricVal}>{stats.activeCount} <span style={styles.metricUnit}>online</span></div>
+            <div style={s.metricLabel}>Active Plugs</div>
+            <div style={s.metricVal}>{stats.activeCount} <span style={s.metricUnit}>online</span></div>
           </div>
         </div>
-
-        <div className="card-premium" style={styles.metricCard}>
-          <div style={{ ...styles.iconBadge, background: 'rgba(245, 158, 11, 0.1)' }}>
-            <ShieldAlert size={20} color="var(--accent-amber)" />
+        <div className="surface-card" style={s.metricCard}>
+          <div style={{ ...s.iconBadge, background: 'rgba(245, 158, 11, 0.08)' }}>
+            <ShieldAlert size={18} color="var(--accent-amber)" />
           </div>
           <div>
-            <div style={styles.metricLabel}>Unresolved Alarms</div>
-            <div style={styles.metricVal}>
-              {alarms.filter(a => a.status !== 'Resolved').length} <span style={styles.metricUnit}>active</span>
+            <div style={s.metricLabel}>Open Alarms</div>
+            <div style={s.metricVal}>
+              {alarms.filter(a => a.status !== 'Resolved').length} <span style={s.metricUnit}>active</span>
             </div>
           </div>
         </div>
-
-        <div className="card-premium" style={styles.metricCard}>
-          <div style={{ ...styles.iconBadge, background: 'rgba(244, 63, 94, 0.1)' }}>
-            <Zap size={20} color="var(--accent-rose)" />
+        <div className="surface-card" style={s.metricCard}>
+          <div style={{ ...s.iconBadge, background: 'rgba(244, 63, 94, 0.08)' }}>
+            <Zap size={18} color="var(--accent-rose)" />
           </div>
           <div>
-            <div style={styles.metricLabel}>Live Anomalies Detected</div>
-            <div style={{ ...styles.metricVal, color: liveAnomalyCount > 0 ? 'var(--accent-rose)' : '#fff' }}>
-              {liveAnomalyCount} <span style={styles.metricUnit}>this session</span>
+            <div style={s.metricLabel}>Anomalies</div>
+            <div style={{ ...s.metricVal, color: liveAnomalyCount > 0 ? 'var(--accent-rose)' : 'var(--text-primary)' }}>
+              {liveAnomalyCount} <span style={s.metricUnit}>session</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Connection Status Indicator */}
-      <div style={styles.connectionBar}>
-        <Radio size={14} color={socketStatus === 'Connected' ? 'var(--accent-emerald)' : 'var(--accent-rose)'} />
-        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-          Anomaly Detection Engine: <strong style={{ color: socketStatus === 'Connected' ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>{socketStatus}</strong>
+      {/* ── Connection Bar ── */}
+      <div style={s.connBar}>
+        <Radio size={12} color={socketStatus === 'Connected' ? 'var(--accent-emerald)' : 'var(--accent-rose)'} />
+        <span style={s.connText}>
+          Anomaly Engine: <strong style={{ color: socketStatus === 'Connected' ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>{socketStatus}</strong>
         </span>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-          Building metrics & alarm board connected to live WebSocket streams
-        </span>
+        <span style={s.connSub}>Live WebSocket stream</span>
       </div>
 
-      {/* Tab Switcher: Issues / Zones */}
-      <div style={styles.tabBar}>
-        <button
-          onClick={() => setActiveTab('issues')}
-          style={{
-            ...styles.tabButton,
-            background: activeTab === 'issues' ? 'rgba(6, 182, 212, 0.1)' : 'transparent',
-            color: activeTab === 'issues' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-            borderColor: activeTab === 'issues' ? 'rgba(6, 182, 212, 0.2)' : 'transparent'
-          }}
-        >
-          <ClipboardList size={14} style={{ marginRight: '6px' }} />
-          Issue Tracker & Alarms
-        </button>
-        <button
-          onClick={() => setActiveTab('zones')}
-          style={{
-            ...styles.tabButton,
-            background: activeTab === 'zones' ? 'rgba(6, 182, 212, 0.1)' : 'transparent',
-            color: activeTab === 'zones' ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-            borderColor: activeTab === 'zones' ? 'rgba(6, 182, 212, 0.2)' : 'transparent'
-          }}
-        >
-          <Building size={14} style={{ marginRight: '6px' }} />
-          Zone Management
-        </button>
+      {/* ── Tab Switcher ── */}
+      <div style={s.tabBar}>
+        {[
+          { key: 'issues', icon: ClipboardList, label: 'Issue Tracker' },
+          { key: 'zones', icon: Building, label: 'Zone Management' },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              ...s.tabBtn,
+              background: activeTab === tab.key ? 'var(--sidebar-active)' : 'transparent',
+              color: activeTab === tab.key ? 'var(--accent-blue)' : 'var(--text-muted)',
+              borderColor: activeTab === tab.key ? 'rgba(59, 130, 246, 0.15)' : 'var(--border-subtle)',
+            }}
+          >
+            <tab.icon size={14} />
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* Tab Content */}
+      {/* ── Tab Content ── */}
       {activeTab === 'issues' ? (
-        <div style={styles.layoutGrid}>
-          {/* View B: Issue Tracker */}
-          <section className="glass-panel" style={styles.issueTrackerCard}>
-            <div style={styles.cardHeader}>
-              <ClipboardList size={18} color="var(--accent-cyan)" />
-              <h3 style={{ margin: 0, fontSize: '16px' }}>Tenant Issue Tracker & Alarm Board</h3>
+        <div style={s.layoutGrid}>
+          {/* Alarm Board */}
+          <section className="surface-card" style={{ ...s.panel, position: 'relative' }}>
+            <div style={s.panelHeader}>
+              <div style={s.titleRow}><ClipboardList size={16} color="var(--accent-cyan)" /><h3 style={s.title}>Alarm Board</h3></div>
             </div>
-
-            <div style={styles.alarmList}>
+            <div style={s.alarmList}>
               {alarms.map(alarm => (
-                <div key={alarm.id} style={styles.alarmRow}>
-                  <div style={styles.alarmRowHeader}>
-                    <div style={styles.alarmMeta}>
-                      <span style={{ 
-                        ...styles.severityBadge, 
-                        background: alarm.severity === 'Critical' 
-                          ? 'rgba(244, 63, 94, 0.15)' 
-                          : alarm.severity === 'High' 
-                            ? 'rgba(245, 158, 11, 0.15)' 
-                            : 'rgba(59, 130, 246, 0.15)',
-                        color: alarm.severity === 'Critical' 
-                          ? 'var(--accent-rose)' 
-                          : alarm.severity === 'High' 
-                            ? 'var(--accent-amber)' 
-                            : 'var(--accent-blue)',
-                      }}>
+                <div key={alarm.id} style={{ ...s.alarmRow, borderLeftColor: getSeverityColor(alarm.severity) }}>
+                  <div style={s.alarmHeader}>
+                    <div style={s.alarmMeta}>
+                      <span style={{ ...s.sevBadge, color: getSeverityColor(alarm.severity), background: `color-mix(in srgb, ${getSeverityColor(alarm.severity)} 10%, transparent)` }}>
                         {alarm.severity}
                       </span>
-                      <span style={styles.alarmId}>{alarm.id}</span>
-                      <span style={styles.alarmZone}>📍 {alarm.zone}</span>
+                      <span style={s.alarmId}>{alarm.id}</span>
+                      <span style={s.alarmZone}>📍 {alarm.zone}</span>
                     </div>
-
-                    <span style={{
-                      ...styles.statusLabel,
-                      color: alarm.status === 'Resolved' 
-                        ? 'var(--accent-emerald)' 
-                        : alarm.status === 'In Progress' 
-                          ? 'var(--accent-amber)' 
-                          : 'var(--accent-rose)'
-                    }}>
+                    <span style={{ ...s.statusText, color: alarm.status === 'Resolved' ? 'var(--accent-emerald)' : alarm.status === 'In Progress' ? 'var(--accent-amber)' : 'var(--accent-rose)' }}>
                       {alarm.status.toUpperCase()}
                     </span>
                   </div>
-
-                  <h4 style={styles.alarmTitle}>{alarm.title}</h4>
-
-                  {/* Sub-actions depending on status */}
-                  <div style={styles.alarmActions}>
+                  <h4 style={s.alarmTitle}>{alarm.title}</h4>
+                  <div style={s.alarmActions}>
                     {alarm.status === 'Open' && (
-                      <div style={styles.actionRow}>
-                        <button 
-                          onClick={() => handleAssignTask(alarm.id, 'Technician Kumar')} 
-                          style={styles.actionBtn}
-                        >
-                          Assign to Kumar
-                        </button>
-                        <button 
-                          onClick={() => triggerResolveForm(alarm.id)} 
-                          style={styles.resolveBtn}
-                        >
-                          Mark as Resolved
-                        </button>
+                      <div style={s.actionRow}>
+                        <button onClick={() => handleAssignTask(alarm.id, 'Technician Kumar')} style={s.actionBtn}>Assign to Kumar</button>
+                        <button onClick={() => triggerResolveForm(alarm.id)} style={s.resolveBtn}>Resolve</button>
                       </div>
                     )}
-
                     {alarm.status === 'In Progress' && (
-                      <div style={styles.actionDetails}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          Assigned to: <strong>{alarm.assignedTo}</strong>
-                        </span>
-                        <button 
-                          onClick={() => triggerResolveForm(alarm.id)} 
-                          style={styles.resolveBtn}
-                        >
-                          Complete & Resolve
-                        </button>
+                      <div style={s.actionDetails}>
+                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Assigned: <strong>{alarm.assignedTo}</strong></span>
+                        <button onClick={() => triggerResolveForm(alarm.id)} style={s.resolveBtn}>Complete</button>
                       </div>
                     )}
-
                     {alarm.status === 'Resolved' && (
-                      <div style={styles.resolutionDetails}>
-                        <CheckCircle size={12} color="var(--accent-emerald)" style={{ marginRight: '6px' }} />
-                        <span>Resolution: {alarm.notes}</span>
-                      </div>
+                      <div style={s.resolved}><CheckCircle size={11} color="var(--accent-emerald)" /><span>{alarm.notes}</span></div>
                     )}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Interactive Resolution Modal Overlay inside Card */}
             {resolvingAlarmId && (
-              <form onSubmit={handleResolveAlarmSubmit} style={styles.resolveForm}>
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', color: 'var(--accent-cyan)' }}>
-                  Resolve Alarm: {resolvingAlarmId}
+              <form onSubmit={handleResolveAlarmSubmit} style={s.resolveForm}>
+                <h4 style={{ margin: '0 0 var(--space-md) 0', fontSize: '14px', color: 'var(--accent-cyan)' }}>
+                  Resolve: {resolvingAlarmId}
                 </h4>
                 <textarea
-                  placeholder="Enter completion notes (e.g. Cleared schedule rules, reset breaker)..."
-                  value={resolutionNote}
-                  onChange={(e) => setResolutionNote(e.target.value)}
-                  required
-                  style={styles.notesTextarea}
+                  placeholder="Enter completion notes…"
+                  value={resolutionNote} onChange={(e) => setResolutionNote(e.target.value)}
+                  required style={s.textarea}
                 />
-                <div style={styles.formButtons}>
-                  <button type="button" onClick={() => setResolvingAlarmId(null)} style={styles.cancelBtn}>
-                    Cancel
-                  </button>
-                  <button type="submit" style={styles.submitBtn}>
-                    Submit Completion Notes
-                  </button>
+                <div style={s.formBtns}>
+                  <button type="button" onClick={() => setResolvingAlarmId(null)} style={s.cancelBtn}>Cancel</button>
+                  <button type="submit" style={s.submitBtn}>Submit</button>
                 </div>
               </form>
             )}
           </section>
 
-          {/* Immutable Administrative Audit Log */}
-          <section className="glass-panel" style={styles.auditLogCard}>
-            <div style={styles.cardHeader}>
-              <Clock size={18} color="var(--accent-amber)" />
-              <h3 style={{ margin: 0, fontSize: '16px' }}>Immutable Administrative Audit Log</h3>
+          {/* Audit Log */}
+          <section className="surface-card" style={s.panel}>
+            <div style={s.panelHeader}>
+              <div style={s.titleRow}><Clock size={16} color="var(--accent-amber)" /><h3 style={s.title}>Audit Log</h3></div>
             </div>
-            <p style={styles.logInstruction}>
-              System records for liability and operations audit trails. These logs are write-only.
-            </p>
-
-            <div style={styles.logList}>
+            <p style={s.logInstr}>Write-only system records for liability trails.</p>
+            <div style={s.logList}>
               {auditLogs.map(log => (
-                <div key={log.id} style={styles.logRow}>
-                  <div style={styles.logHeader}>
-                    <span style={styles.logTime}>{log.timestamp}</span>
-                    <span style={{
-                      ...styles.logActor,
-                      color: log.actor.includes('System') ? 'var(--accent-rose)' : 'var(--accent-blue)'
-                    }}>{log.actor}</span>
+                <div key={log.id} style={s.logRow}>
+                  <div style={s.logHeader}>
+                    <span style={s.logTime}>{log.timestamp}</span>
+                    <span style={{ ...s.logActor, color: log.actor.includes('System') ? 'var(--accent-rose)' : 'var(--accent-blue)' }}>{log.actor}</span>
                   </div>
-                  <div style={styles.logAction}>
-                    <ArrowRight size={10} style={{ marginRight: '6px', flexShrink: 0, marginTop: '3px' }} />
+                  <div style={s.logAction}>
+                    <ArrowRight size={9} style={{ marginRight: '4px', flexShrink: 0, marginTop: '2px' }} />
                     <span>{log.action}</span>
                   </div>
                 </div>
@@ -433,8 +260,7 @@ export const AdminDashboard = ({ user, recentTelemetry, liveLogs, socketStatus }
           </section>
         </div>
       ) : (
-        /* Zone Management Tab */
-        <div className="glass-panel" style={{ padding: '24px' }}>
+        <div className="surface-card" style={s.panel}>
           <ZoneMapper user={user} />
         </div>
       )}
@@ -442,278 +268,103 @@ export const AdminDashboard = ({ user, recentTelemetry, liveLogs, socketStatus }
   );
 };
 
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '24px',
-    flexGrow: 1,
+const s = {
+  container: { display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' },
+
+  metricsGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)' },
+  metricCard: { padding: 'var(--space-md) var(--space-lg)', display: 'flex', alignItems: 'center', gap: 'var(--space-md)' },
+  iconBadge: { padding: 'var(--space-sm)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  metricLabel: { fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' },
+  metricVal: { fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' },
+  metricUnit: { fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)' },
+
+  connBar: {
+    display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+    padding: 'var(--space-sm) var(--space-md)',
+    background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)',
   },
-  metricsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '16px',
+  connText: { fontSize: '11px', color: 'var(--text-secondary)' },
+  connSub: { fontSize: '10px', color: 'var(--text-muted)', marginLeft: 'auto' },
+
+  tabBar: { display: 'flex', gap: 'var(--space-sm)' },
+  tabBtn: {
+    display: 'flex', alignItems: 'center', gap: 'var(--space-xs)',
+    padding: 'var(--space-sm) var(--space-md)',
+    border: '1px solid', borderRadius: 'var(--radius-sm)',
+    fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+    fontFamily: 'var(--font-sans)',
+    transition: 'all var(--duration-fast) ease',
   },
-  metricCard: {
-    padding: '18px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '14px',
-  },
-  iconBadge: {
-    padding: '12px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  metricLabel: {
-    fontSize: '11px',
-    color: 'var(--text-secondary)',
-    fontWeight: 500,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-  },
-  metricVal: {
-    fontSize: '20px',
-    fontWeight: 800,
-    color: '#fff',
-    marginTop: '4px',
-  },
-  metricUnit: {
-    fontSize: '11px',
-    fontWeight: 500,
-    color: 'var(--text-muted)',
-  },
-  connectionBar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 16px',
-    background: 'rgba(0,0,0,0.15)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '10px',
-  },
-  tabBar: {
-    display: 'flex',
-    gap: '8px',
-  },
-  tabButton: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '8px 16px',
-    border: '1px solid',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: 600,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  layoutGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1.2fr 1fr',
-    gap: '24px',
-    alignItems: 'stretch',
-  },
-  issueTrackerCard: {
-    padding: '24px',
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  auditLogCard: {
-    padding: '24px',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  cardHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '16px',
-  },
-  alarmList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '14px',
-    overflowY: 'auto',
-    flexGrow: 1,
-    maxHeight: '480px',
-  },
+
+  layoutGrid: { display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 'var(--space-lg)', alignItems: 'start' },
+  panel: { padding: 'var(--space-lg)' },
+  panelHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' },
+  titleRow: { display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' },
+  title: { margin: 0, fontSize: '15px', fontWeight: 600 },
+
+  alarmList: { display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', maxHeight: '480px', overflowY: 'auto' },
   alarmRow: {
-    background: 'rgba(0, 0, 0, 0.15)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
-    padding: '16px',
+    background: 'var(--bg-input)', border: '1px solid var(--border-subtle)',
+    borderLeft: '3px solid', borderRadius: 'var(--radius-sm)', padding: 'var(--space-md)',
   },
-  alarmRowHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '8px',
-  },
-  alarmMeta: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  severityBadge: {
-    fontSize: '10px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    padding: '2px 6px',
-    borderRadius: '4px',
-  },
-  alarmId: {
-    fontSize: '11px',
-    color: 'var(--text-muted)',
-    fontFamily: 'var(--font-mono)',
-  },
-  alarmZone: {
-    fontSize: '12px',
-    color: 'var(--text-secondary)',
-  },
-  statusLabel: {
-    fontSize: '11px',
-    fontWeight: 700,
-    letterSpacing: '0.05em',
-  },
-  alarmTitle: {
-    fontSize: '14px',
-    color: '#fff',
-    margin: '0 0 12px 0',
-    lineHeight: '1.4',
-  },
-  alarmActions: {
-    borderTop: '1px dashed var(--border-color)',
-    paddingTop: '12px',
-  },
-  actionRow: {
-    display: 'flex',
-    gap: '10px',
-  },
+  alarmHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
+  alarmMeta: { display: 'flex', alignItems: 'center', gap: '6px' },
+  sevBadge: { fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', padding: '2px 5px', borderRadius: '3px' },
+  alarmId: { fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' },
+  alarmZone: { fontSize: '11px', color: 'var(--text-secondary)' },
+  statusText: { fontSize: '10px', fontWeight: 700, letterSpacing: '0.04em' },
+  alarmTitle: { fontSize: '13px', color: 'var(--text-primary)', margin: '0 0 var(--space-sm) 0', lineHeight: '1.4' },
+  alarmActions: { borderTop: '1px dashed var(--border-subtle)', paddingTop: 'var(--space-sm)' },
+  actionRow: { display: 'flex', gap: 'var(--space-sm)' },
   actionBtn: {
-    background: 'rgba(59, 130, 246, 0.08)',
-    border: '1px solid rgba(59, 130, 246, 0.2)',
-    color: 'var(--accent-blue)',
-    padding: '6px 12px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    cursor: 'pointer',
-    fontWeight: 500,
-    transition: 'all 0.2s ease',
+    background: 'rgba(59, 130, 246, 0.06)', border: '1px solid rgba(59, 130, 246, 0.15)',
+    color: 'var(--accent-blue)', padding: '4px 10px', borderRadius: 'var(--radius-xs)',
+    fontSize: '11px', cursor: 'pointer', fontWeight: 500, fontFamily: 'var(--font-sans)',
+    transition: 'all var(--duration-fast) ease',
   },
   resolveBtn: {
-    background: 'rgba(16, 185, 129, 0.08)',
-    border: '1px solid rgba(16, 185, 129, 0.2)',
-    color: 'var(--accent-emerald)',
-    padding: '6px 12px',
-    borderRadius: '6px',
-    fontSize: '12px',
-    cursor: 'pointer',
-    fontWeight: 500,
-    transition: 'all 0.2s ease',
+    background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.15)',
+    color: 'var(--accent-emerald)', padding: '4px 10px', borderRadius: 'var(--radius-xs)',
+    fontSize: '11px', cursor: 'pointer', fontWeight: 500, fontFamily: 'var(--font-sans)',
+    transition: 'all var(--duration-fast) ease',
   },
-  actionDetails: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  resolutionDetails: {
-    display: 'flex',
-    alignItems: 'center',
-    fontSize: '12px',
-    color: 'var(--text-secondary)',
-  },
+  actionDetails: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  resolved: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-secondary)' },
+
   resolveForm: {
-    position: 'absolute',
-    top: '24px',
-    left: '24px',
-    right: '24px',
-    bottom: '24px',
-    background: '#0d0f19',
-    border: '1px solid var(--border-color)',
-    borderRadius: '12px',
-    padding: '20px',
-    zIndex: 10,
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '0 15px 30px rgba(0,0,0,0.6)',
+    position: 'absolute', inset: 'var(--space-lg)',
+    background: 'var(--bg-surface)', border: '1px solid var(--border-primary)',
+    borderRadius: 'var(--radius-md)', padding: 'var(--space-lg)',
+    zIndex: 10, display: 'flex', flexDirection: 'column',
+    boxShadow: 'var(--shadow-xl)',
   },
-  notesTextarea: {
-    flexGrow: 1,
-    background: 'rgba(0,0,0,0.3)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    padding: '12px',
-    color: '#fff',
-    fontFamily: 'inherit',
-    fontSize: '13px',
-    resize: 'none',
-    marginBottom: '16px',
-    outline: 'none',
+  textarea: {
+    flexGrow: 1, background: 'var(--bg-input)', border: '1px solid var(--border-primary)',
+    borderRadius: 'var(--radius-sm)', padding: 'var(--space-md)',
+    color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: '12px',
+    resize: 'none', marginBottom: 'var(--space-md)', outline: 'none',
   },
-  formButtons: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '10px',
-  },
+  formBtns: { display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-sm)' },
   cancelBtn: {
-    background: 'transparent',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-secondary)',
-    padding: '8px 16px',
-    borderRadius: '6px',
-    fontSize: '13px',
-    cursor: 'pointer',
+    background: 'transparent', border: '1px solid var(--border-primary)',
+    color: 'var(--text-secondary)', padding: '6px 14px', borderRadius: 'var(--radius-sm)',
+    fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-sans)',
   },
   submitBtn: {
-    background: 'var(--accent-emerald)',
-    border: 'none',
-    color: '#fff',
-    padding: '8px 16px',
-    borderRadius: '6px',
-    fontSize: '13px',
-    cursor: 'pointer',
-    fontWeight: 600,
+    background: 'var(--accent-emerald)', border: 'none', color: '#fff',
+    padding: '6px 14px', borderRadius: 'var(--radius-sm)',
+    fontSize: '12px', cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)',
   },
-  logInstruction: {
-    fontSize: '12px',
-    color: 'var(--text-muted)',
-    marginBottom: '16px',
-    marginTop: 0,
-  },
-  logList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    overflowY: 'auto',
-    flexGrow: 1,
-    maxHeight: '380px',
-  },
+
+  logInstr: { fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 var(--space-md) 0' },
+  logList: { display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', maxHeight: '420px', overflowY: 'auto' },
   logRow: {
-    padding: '10px 14px',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.04)',
-    borderRadius: '8px',
+    padding: 'var(--space-sm) var(--space-md)',
+    background: 'var(--bg-input)', border: '1px solid var(--border-subtle)',
+    borderRadius: 'var(--radius-xs)',
   },
-  logHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '11px',
-    color: 'var(--text-muted)',
-    marginBottom: '4px',
-  },
-  logTime: {
-    fontFamily: 'var(--font-mono)',
-  },
-  logActor: {
-    fontWeight: 600,
-  },
-  logAction: {
-    fontSize: '12px',
-    color: 'var(--text-secondary)',
-    display: 'flex',
-    alignItems: 'flex-start',
-  },
+  logHeader: { display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px' },
+  logTime: { fontFamily: 'var(--font-mono)' },
+  logActor: { fontWeight: 600 },
+  logAction: { fontSize: '11px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'flex-start' },
 };

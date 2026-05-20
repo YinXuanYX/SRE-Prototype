@@ -58,7 +58,7 @@ export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
 
   return (
     <div style={styles.backdrop}>
-      <div className="glass-panel" style={styles.modal}>
+      <div className="glass-panel animate-in" style={styles.modal}>
         <h3 style={styles.modalTitle}>Appliance Correction Form</h3>
         <p style={styles.modalDesc}>
           Correct the system classification labels if you identify an anomaly or misidentified appliance signature.
@@ -90,7 +90,8 @@ export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
             <select
               value={selectedLabel}
               onChange={(e) => setSelectedLabel(e.target.value)}
-              style={styles.select}
+              className="input-field"
+              style={{ appearance: 'none', background: 'var(--bg-elevated)', cursor: 'pointer' }}
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -99,7 +100,7 @@ export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
           </div>
 
           {selectedLabel === 'Other (Enter Custom Label below)' && (
-            <div style={styles.inputGroup}>
+            <div style={styles.inputGroup} className="animate-in">
               <label style={styles.label}>Custom Appliance Name</label>
               <input
                 type="text"
@@ -107,7 +108,7 @@ export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
                 onChange={(e) => setCustomLabel(e.target.value)}
                 placeholder="e.g. Master Bedroom Dehumidifier..."
                 required
-                style={styles.textInput}
+                className="input-field"
               />
             </div>
           )}
@@ -124,6 +125,7 @@ export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
               type="button" 
               onClick={onClose} 
               disabled={isSubmitting} 
+              className="btn-secondary"
               style={styles.cancelBtn}
             >
               Cancel
@@ -138,7 +140,7 @@ export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
               {isSubmitting ? (
                 <>
                   <Loader2 size={14} className="spin" style={{ marginRight: '6px' }} />
-                  <span>Submitting signature...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <span>Re-train Classifier</span>
@@ -158,39 +160,42 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'rgba(5, 5, 8, 0.85)',
+    background: 'var(--bg-overlay)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
-    backdropFilter: 'blur(4px)',
+    backdropFilter: 'blur(6px)',
   },
   modal: {
     width: '100%',
     maxWidth: '440px',
-    padding: '24px',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+    padding: 'var(--space-xl)',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border-primary)',
+    borderRadius: 'var(--radius-lg)',
+    boxShadow: 'var(--shadow-xl)',
   },
   modalTitle: {
     fontSize: '18px',
-    color: '#fff',
-    margin: '0 0 8px 0',
+    color: 'var(--text-primary)',
+    margin: '0 0 var(--space-sm) 0',
   },
   modalDesc: {
     fontSize: '12px',
     color: 'var(--text-secondary)',
     lineHeight: '1.5',
-    margin: '0 0 20px 0',
+    margin: '0 0 var(--space-md) 0',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: 'var(--space-md)',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: 'var(--space-xs)',
   },
   label: {
     fontSize: '12px',
@@ -198,39 +203,20 @@ const styles = {
     fontWeight: 500,
   },
   disabledInput: {
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(255, 255, 255, 0.05)',
-    borderRadius: '8px',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: 'var(--radius-sm)',
     padding: '10px 12px',
     color: 'var(--text-muted)',
     fontSize: '13px',
     outline: 'none',
   },
-  select: {
-    background: 'rgba(0, 0, 0, 0.3)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    padding: '10px 12px',
-    color: '#fff',
-    fontSize: '13px',
-    outline: 'none',
-    cursor: 'pointer',
-  },
-  textInput: {
-    background: 'rgba(0, 0, 0, 0.3)',
-    border: '1px solid var(--border-color)',
-    borderRadius: '8px',
-    padding: '10px 12px',
-    color: '#fff',
-    fontSize: '13px',
-    outline: 'none',
-  },
   pdpaNote: {
     display: 'flex',
-    gap: '8px',
+    gap: 'var(--space-sm)',
     background: 'rgba(6, 182, 212, 0.05)',
     border: '1px solid rgba(6, 182, 212, 0.15)',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-sm)',
     padding: '10px 12px',
     fontSize: '11px',
     color: 'var(--text-secondary)',
@@ -239,23 +225,15 @@ const styles = {
   modalButtons: {
     display: 'flex',
     justifyContent: 'flex-end',
-    gap: '10px',
-    marginTop: '8px',
+    gap: 'var(--space-sm)',
+    marginTop: 'var(--space-sm)',
   },
   cancelBtn: {
-    background: 'transparent',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-secondary)',
     padding: '8px 16px',
-    borderRadius: '8px',
     fontSize: '13px',
-    cursor: 'pointer',
   },
   submitBtn: {
     fontSize: '13px',
     padding: '8px 16px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 };
