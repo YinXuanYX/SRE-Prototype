@@ -23,6 +23,11 @@ export class AnomalyDetectorService {
   // Track last-seen timestamps for offline heartbeat detection
   private lastSeen: Map<string, number> = new Map();
 
+  // Tracks the last alert trigger timestamp for throttling
+  // Key: `${deviceId}:${alertType}`
+  private lastAlertTrigger: Map<string, number> = new Map();
+  private readonly ALERT_COOLDOWN_MS = 60_000; // 60 seconds cooldown to prevent duplication spam
+
   // Anomaly detection thresholds
   private readonly SUSTAINED_LOAD_THRESHOLD_KW = 3.5;     // kW: flag if sustained above this
   private readonly SUSTAINED_LOAD_WINDOW = 5;              // readings: must exceed threshold for N consecutive readings
@@ -42,6 +47,17 @@ export class AnomalyDetectorService {
     'device-light-01': 'Ground Lobby',
     'device-anomaly-timer': 'Ground Lobby',
   };
+
+  private shouldAlert(deviceId: string, type: string): boolean {
+    const key = `${deviceId}:${type}`;
+    const now = Date.now();
+    const lastTime = this.lastAlertTrigger.get(key) || 0;
+    if (now - lastTime < this.ALERT_COOLDOWN_MS) {
+      return false;
+    }
+    this.lastAlertTrigger.set(key, now);
+    return true;
+  }
 
   /**
    * Evaluate a single telemetry reading for anomalies.
@@ -78,7 +94,7 @@ export class AnomalyDetectorService {
     }
 
     // --- Check 1: Instant Over-Current Spike ---
-    if (loadKw >= this.OVER_CURRENT_SPIKE_KW) {
+    if (loadKw >= this.OVER_CURRENT_SPIKE_KW && this.shouldAlert(deviceId, 'over_current')) {
       this.alertCounter++;
       alerts.push({
         id: `AL-${this.alertCounter}`,
@@ -98,7 +114,7 @@ export class AnomalyDetectorService {
     if (history.length >= this.SUSTAINED_LOAD_WINDOW) {
       const recentWindow = history.slice(-this.SUSTAINED_LOAD_WINDOW);
       const allAbove = recentWindow.every(r => r.loadKw >= this.SUSTAINED_LOAD_THRESHOLD_KW);
-      if (allAbove) {
+      if (allAbove && this.shouldAlert(deviceId, 'sustained_load')) {
         this.alertCounter++;
         const avgLoad = recentWindow.reduce((s, r) => s + r.loadKw, 0) / recentWindow.length;
         alerts.push({
@@ -117,7 +133,7 @@ export class AnomalyDetectorService {
     }
 
     // --- Check 3: Voltage Anomaly ---
-    if (voltage < this.VOLTAGE_LOW_THRESHOLD || voltage > this.VOLTAGE_HIGH_THRESHOLD) {
+    if ((voltage < this.VOLTAGE_LOW_THRESHOLD || voltage > this.VOLTAGE_HIGH_THRESHOLD) && this.shouldAlert(deviceId, 'voltage_anomaly')) {
       this.alertCounter++;
       alerts.push({
         id: `AL-${this.alertCounter}`,

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { useState } from 'react';
+import { ShieldCheck, ShieldAlert, CheckCircle2, Lock } from 'lucide-react';
 
-export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
+export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated, isModal = false }) => {
   const [consentGranted, setConsentGranted] = useState(initialConsent);
   const [isLoading, setIsLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -37,26 +37,35 @@ export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
       onConsentUpdated(targetStatus);
       triggerToast(
         targetStatus
-          ? '✓ Appliance-level analysis unlocked. Your consent has been recorded.'
+          ? '✓ Consent record updated. Security channels initialized.'
           : '⚠️ Consent revoked. Appliance signatures have been deactivated.'
       );
     } catch (err) {
       console.error(err);
       setConsentGranted(targetStatus);
       onConsentUpdated(targetStatus);
-      triggerToast(`Preferences saved locally.`);
+      triggerToast(`Preferences updated locally.`);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const cardStyle = isModal ? s.modalCard : s.card;
+
   return (
-    <div style={s.card} className="surface-card animate-in">
+    <div style={cardStyle} className="surface-card animate-in">
       {/* Toast Notification */}
       {showToast && (
         <div style={s.toast}>
           <CheckCircle2 size={14} color="var(--accent-emerald)" />
           <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {isModal && (
+        <div style={s.modalGateHeader}>
+          <Lock size={14} color="var(--accent-rose)" />
+          <span>SECURE PRIVACY GATEWAY</span>
         </div>
       )}
 
@@ -73,7 +82,7 @@ export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
           )}
         </div>
         <div>
-          <h3 style={s.title}>PDPA Consent Settings</h3>
+          <h3 style={s.title}>{isModal ? 'Authorize Sub-Meter Ingestion' : 'PDPA Consent Settings'}</h3>
           <p style={s.statusLabel}>
             Verification Status:{' '}
             <span style={{ color: consentGranted ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
@@ -84,19 +93,19 @@ export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
       </div>
 
       <p style={s.bodyText}>
-        To comply with the <strong>Malaysian Personal Data Protection Act (PDPA)</strong>, high-frequency appliance load signatures are separated and isolated by default.
+        To comply with the <strong>Malaysian Personal Data Protection Act (PDPA)</strong>, GridPulse isolates high-frequency electrical load signature analysis. Property administrators and landlords remain completely gated from viewing your specific appliance metrics.
       </p>
 
       <div style={s.featuresList}>
-        <h4 style={s.listHeader}>What data signatures are captured?</h4>
+        <h4 style={s.listHeader}>Directives for consent authorization:</h4>
         <ul style={s.ul}>
           <li style={s.li}>
             <span style={s.bullet}>⚡</span>
-            <span><strong>Load Peak Extraction:</strong> ML signatures mapping device draw spikes to appliance types.</span>
+            <span><strong>Load Ingestion:</strong> Deconstruct high-frequency voltage fluctuations into specific appliance footprints.</span>
           </li>
           <li style={s.li}>
             <span style={s.bullet}>🛡️</span>
-            <span><strong>Privacy Isolation:</strong> Landlords and property administrators remain restricted from individual appliance details.</span>
+            <span><strong>Tenancy Privacy:</strong> Lock detailed profiles away from property owners (only aggregated building load is exposed).</span>
           </li>
         </ul>
       </div>
@@ -116,9 +125,9 @@ export const ConsentFlow = ({ userId, initialConsent, onConsentUpdated }) => {
             onClick={() => handleUpdateConsent(true)}
             disabled={isLoading}
             className="btn-primary"
-            style={{ width: '100%', justifyContent: 'center' }}
+            style={{ width: '100%', justifyContent: 'center', padding: '10px 0' }}
           >
-            {isLoading ? 'Activating security protocols...' : 'Agree & Unlock Appliance Breakdown'}
+            {isLoading ? 'Activating security protocols...' : 'Agree & Authorize Analytics'}
           </button>
         )}
       </div>
@@ -133,6 +142,30 @@ const s = {
     width: '100%',
     margin: 'var(--space-md) auto 0 auto',
     padding: 'var(--space-lg)',
+  },
+  modalCard: {
+    position: 'relative',
+    maxWidth: '480px',
+    width: '100%',
+    padding: 'var(--space-xl) var(--space-lg)',
+    boxShadow: 'var(--shadow-2xl)',
+    border: '1px solid var(--border-primary)',
+    borderRadius: 'var(--radius-lg)',
+    background: 'var(--bg-surface)',
+  },
+  modalGateHeader: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 'var(--space-sm)',
+    background: 'rgba(244, 63, 94, 0.08)',
+    border: '1px solid rgba(244, 63, 94, 0.15)',
+    padding: '4px 10px',
+    borderRadius: 'var(--radius-full)',
+    fontSize: '9px',
+    fontWeight: 700,
+    color: 'var(--accent-rose)',
+    letterSpacing: '0.08em',
+    marginBottom: 'var(--space-md)',
   },
   header: {
     display: 'flex',

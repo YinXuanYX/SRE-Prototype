@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export const EnergyChart = ({ data }) => {
   const [hoverIndex, setHoverIndex] = useState(null);
@@ -35,8 +35,6 @@ export const EnergyChart = ({ data }) => {
 
   // Find boundaries
   const maxVal = Math.max(...data.map(d => d.kwh), 5); // default min height scale of 5 kWh
-  const minVal = 0;
-
   // Build points
   const points = data.map((d, i) => {
     const x = paddingLeft + (i / (data.length - 1)) * chartWidth;

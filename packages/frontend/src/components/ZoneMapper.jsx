@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MapPin,
   Plus,
@@ -9,7 +9,7 @@ import {
   Zap
 } from 'lucide-react';
 
-export const ZoneMapper = ({ user }) => {
+export const ZoneMapper = () => {
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -22,25 +22,24 @@ export const ZoneMapper = ({ user }) => {
   const [formDevices, setFormDevices] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const fetchZones = async () => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem('sre_token');
-      const res = await fetch('http://localhost:3000/api/zones', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setZones(data);
-      }
-    } catch (err) {
-      console.error('[ZoneMapper] Failed to fetch zones:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchZones = async () => {
+      try {
+        const token = localStorage.getItem('sre_token');
+        const res = await fetch('http://localhost:3000/api/zones', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setZones(data);
+        }
+      } catch (err) {
+        console.error('[ZoneMapper] Failed to fetch zones:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchZones();
   }, []);
 

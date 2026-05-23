@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ThemeProvider } from './components/ThemeProvider';
 import { Login } from './components/Login';
-import { DashboardShell } from './components/DashboardShell';
+import { ResidentLayout } from './layouts/ResidentLayout';
+import { AdminLayout } from './layouts/AdminLayout';
+import { SuperAdminLayout } from './layouts/SuperAdminLayout';
+import { SupportLayout } from './layouts/SupportLayout';
 import { db } from './db/indexedDB';
 
 function App() {
@@ -11,6 +14,9 @@ function App() {
   const [recentTelemetry, setRecentTelemetry] = useState({});
   const [liveLogs, setLiveLogs] = useState([]);
   
+  // Dev-mode role override (for testing via Settings)
+  const [roleOverride, setRoleOverride] = useState(null);
+  
   const wsRef = useRef(null);
 
   // WebSocket Telemetry Connection
@@ -18,10 +24,10 @@ function App() {
     if (!token) return;
 
     console.log('[App] Initializing Telemetry WebSocket connection...');
-    setSocketStatus('Connecting...');
+    Promise.resolve().then(() => setSocketStatus('Connecting...'));
     
-    // Connect to NestJS WebSocket Gateway (port 3000, path /telemetry)
-    const socket = new WebSocket('ws://localhost:3000/telemetry');
+    const host = window.location.hostname || 'localhost';
+    const socket = new WebSocket(`ws://${host}:3000/telemetry`);
     wsRef.current = socket;
 
     socket.onopen = () => {
@@ -84,6 +90,7 @@ function App() {
     localStorage.setItem('sre_user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
+    setRoleOverride(null);
   };
 
   const handleLogout = () => {
@@ -93,8 +100,39 @@ function App() {
     setUser(null);
     setRecentTelemetry({});
     setLiveLogs([]);
+    setRoleOverride(null);
     if (wsRef.current) {
       wsRef.current.close();
+    }
+  };
+
+  const handleRoleSwitch = (newRole) => {
+    setRoleOverride(newRole);
+  };
+
+  const activeRole = roleOverride || (user ? user.role : 'Resident');
+
+  const renderLayout = () => {
+    const commonProps = {
+      user,
+      onLogout: handleLogout,
+      recentTelemetry,
+      liveLogs,
+      socketStatus,
+      onRoleSwitch: handleRoleSwitch,
+    };
+
+    switch (activeRole) {
+      case 'Resident':
+        return <ResidentLayout {...commonProps} />;
+      case 'Admin':
+        return <AdminLayout {...commonProps} />;
+      case 'Super Admin':
+        return <SuperAdminLayout {...commonProps} />;
+      case 'Support':
+        return <SupportLayout {...commonProps} />;
+      default:
+        return <ResidentLayout {...commonProps} />;
     }
   };
 
@@ -103,13 +141,7 @@ function App() {
       {(!token || !user) ? (
         <Login onLoginSuccess={handleLoginSuccess} />
       ) : (
-        <DashboardShell
-          user={user}
-          onLogout={handleLogout}
-          recentTelemetry={recentTelemetry}
-          liveLogs={liveLogs}
-          socketStatus={socketStatus}
-        />
+        renderLayout()
       )}
     </ThemeProvider>
   );

@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Heart, 
-  Terminal, 
   Settings, 
   Server, 
-  ShieldAlert,
-  Play,
-  Pause
+  ShieldAlert
 } from 'lucide-react';
 
-export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) => {
-  const [logsPaused, setLogsPaused] = useState(false);
-  const [time, setTime] = useState(Date.now());
+export const SupportDashboard = ({ recentTelemetry, socketStatus }) => {
+  const [time, setTime] = useState(() => Date.now());
   const [heartbeatLogs, setHeartbeatLogs] = useState([
     { id: 'h-1', time: '12:00:05 AM', msg: '[Gateway] Failover setup: TimescaleDB pool failed. IN-MEMORY schema initialized.' },
     { id: 'h-2', time: '12:00:08 AM', msg: '[Gateway] Connected telemetry simulator successfully.' },
@@ -85,7 +81,6 @@ export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) =>
           'device-anomaly-timer': 'Facility Timer Plug',
         };
 
-        // Fluctuating pings between 12ms and 24ms, or Offline if not Active
         const pingVal = socketStatus === 'Connected' && dev.status === 'Active'
           ? `${Math.round(12 + (time % 7) + (dev.loadKw * 2) % 6)}ms`
           : 'Offline';
@@ -107,9 +102,9 @@ export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) =>
   return (
     <div style={styles.container}>
       {/* Diagnostics Cards Row */}
-      <section style={styles.metricsGrid} className="stagger-children">
+      <section style={styles.metricsGrid} className="stagger-children animate-in">
         
-        <div className="card-premium" style={styles.metricCard}>
+        <div className="card-premium surface-card" style={styles.metricCard}>
           <div style={{ ...styles.iconBadge, background: 'rgba(6, 182, 212, 0.1)' }}>
             <Server size={20} color="var(--accent-cyan)" />
           </div>
@@ -124,7 +119,7 @@ export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) =>
           </div>
         </div>
 
-        <div className="card-premium" style={styles.metricCard}>
+        <div className="card-premium surface-card" style={styles.metricCard}>
           <div style={{ ...styles.iconBadge, background: 'rgba(59, 130, 246, 0.1)' }}>
             <Settings size={20} color="var(--accent-blue)" />
           </div>
@@ -136,7 +131,7 @@ export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) =>
           </div>
         </div>
 
-        <div className="card-premium" style={styles.metricCard}>
+        <div className="card-premium surface-card" style={styles.metricCard}>
           <div style={{ ...styles.iconBadge, background: 'rgba(16, 185, 129, 0.1)' }}>
             <Heart size={20} color="var(--accent-emerald)" />
           </div>
@@ -154,17 +149,19 @@ export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) =>
       </section>
 
       {/* Node Inventory - Horizontal Scroll Strip */}
-      <section className="glass-panel" style={styles.nodesCard}>
+      <section className="glass-panel surface-card animate-in" style={styles.nodesCard}>
         <div style={styles.cardHeader}>
           <Settings size={18} color="var(--accent-cyan)" />
-          <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>Network Node Inventory</h3>
+          <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--text-primary)' }}>Network Node Inventory</h3>
         </div>
 
         <div style={styles.nodeList}>
           {supportNodes.map(node => (
             <div key={node.id} style={styles.nodeRow}>
               <div>
-                <div style={styles.nodeId}>{node.id} <span style={styles.nodeType}>{node.type}</span></div>
+                <div style={styles.nodeId}>
+                  {node.id} <span style={styles.nodeType}>{node.type}</span>
+                </div>
                 <div style={styles.nodeIp}>IP Address: {node.clientIp}</div>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -182,10 +179,10 @@ export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) =>
       </section>
 
       {/* Alarm Log Diagnostics */}
-      <section className="glass-panel" style={styles.alertsCard}>
+      <section className="glass-panel surface-card animate-in" style={styles.alertsCard}>
         <div style={styles.cardHeader}>
           <ShieldAlert size={18} color="var(--accent-rose)" />
-          <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>Node Heartbeat Diagnostic Log</h3>
+          <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--text-primary)' }}>Node Heartbeat Diagnostic Log</h3>
         </div>
         <p style={styles.instruction}>
           Historical telemetry gateway disconnect events or frame corruption alerts.
@@ -210,56 +207,6 @@ export const SupportDashboard = ({ recentTelemetry, liveLogs, socketStatus }) =>
           ))}
         </div>
       </section>
-
-      {/* Live Console Terminal log - full width */}
-      <section className="glass-panel" style={styles.consoleCard}>
-        <div style={styles.consoleHeader}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-            <Terminal size={18} color="var(--accent-cyan)" />
-            <h3 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>Diagnostic Stream Terminal Log</h3>
-          </div>
-          <button 
-            onClick={() => setLogsPaused(!logsPaused)} 
-            style={{
-              ...styles.pauseBtn,
-              color: logsPaused ? 'var(--accent-emerald)' : 'var(--text-secondary)',
-              borderColor: logsPaused ? 'var(--accent-emerald)' : 'var(--border-primary)'
-            }}
-          >
-            {logsPaused ? (
-              <>
-                <Play size={12} style={{ marginRight: 'var(--space-xs)' }} />
-                <span>Resume Feed</span>
-              </>
-            ) : (
-              <>
-                <Pause size={12} style={{ marginRight: 'var(--space-xs)' }} />
-                <span>Pause Feed</span>
-              </>
-            )}
-          </button>
-        </div>
-
-        <div style={styles.consoleContainer}>
-          {logsPaused ? (
-            <div style={styles.pausedIndicator}>[FEED PAUSED FOR INSPECTION]</div>
-          ) : liveLogs.length === 0 ? (
-            <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>Awaiting WebSocket packets...</span>
-          ) : (
-            liveLogs.map((log) => (
-              <div key={log.id} style={styles.consoleLogLine}>
-                <span style={styles.logTimestamp}>[{new Date(log.timestamp).toLocaleTimeString()}]</span>
-                <span style={styles.logTag}>[TELEMETRY]</span>
-                <span style={styles.logDevice}>{log.deviceName} (ID: {log.deviceId})</span>
-                <span style={styles.logValue}>
-                  {log.status === 'Active' ? `Load: ${log.loadKw} kW / Volts: ${log.voltage} V` : `STATUS: ${log.status}`}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </section>
-
     </div>
   );
 };
@@ -281,7 +228,6 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: 'var(--space-md)',
-    background: 'var(--bg-surface)',
     borderRadius: 'var(--radius-md)',
   },
   iconBadge: {
@@ -292,20 +238,20 @@ const styles = {
     justifyContent: 'center',
   },
   metricLabel: {
-    fontSize: '12px',
+    fontSize: '11px',
     color: 'var(--text-secondary)',
     fontWeight: 500,
     textTransform: 'uppercase',
     letterSpacing: '0.05em',
   },
   metricVal: {
-    fontSize: '22px',
-    fontWeight: 800,
+    fontSize: '20px',
+    fontWeight: 700,
     color: 'var(--text-primary)',
     marginTop: 'var(--space-xs)',
   },
   metricUnit: {
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: 500,
     color: 'var(--text-muted)',
   },
@@ -334,9 +280,9 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 'var(--space-md) var(--space-lg)',
-    background: 'var(--bg-elevated)',
-    border: '1px solid var(--border-primary)',
-    borderRadius: 'var(--radius-md)',
+    background: 'var(--bg-input)',
+    border: '1px solid var(--border-subtle)',
+    borderRadius: 'var(--radius-sm)',
     minWidth: '280px',
     flexShrink: 0,
   },
@@ -348,10 +294,10 @@ const styles = {
   nodeType: {
     marginLeft: 'var(--space-xs)',
     fontSize: '9px',
-    background: 'var(--bg-active)',
-    color: 'var(--text-secondary)',
+    background: 'rgba(255,255,255,0.06)',
+    color: 'var(--text-muted)',
     padding: '2px 6px',
-    borderRadius: 'var(--radius-xs)',
+    borderRadius: '3px',
     fontWeight: 600,
     textTransform: 'uppercase',
   },
@@ -371,7 +317,7 @@ const styles = {
     marginTop: '2px',
   },
   instruction: {
-    fontSize: '13px',
+    fontSize: '12px',
     color: 'var(--text-secondary)',
     marginTop: 0,
     marginBottom: 'var(--space-md)',
@@ -395,65 +341,6 @@ const styles = {
     fontFamily: 'var(--font-mono)',
   },
   alertMsg: {
-    color: 'var(--text-secondary)',
-  },
-  consoleCard: {
-    padding: 'var(--space-lg)',
-    borderRadius: 'var(--radius-md)',
-  },
-  consoleHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 'var(--space-md)',
-  },
-  pauseBtn: {
-    background: 'transparent',
-    border: '1px solid var(--border-primary)',
-    borderRadius: 'var(--radius-sm)',
-    padding: 'var(--space-xs) var(--space-sm)',
-    fontSize: '12px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    transition: `all var(--duration-normal) var(--ease-out-expo)`,
-  },
-  consoleContainer: {
-    background: 'var(--bg-input)',
-    border: '1px solid var(--border-primary)',
-    borderRadius: 'var(--radius-md)',
-    padding: 'var(--space-md)',
-    fontFamily: 'var(--font-mono)',
-    fontSize: '12px',
-    maxHeight: '320px',
-    overflowY: 'auto',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 'var(--space-xs)',
-  },
-  pausedIndicator: {
-    color: 'var(--accent-emerald)',
-    textAlign: 'center',
-    fontWeight: 600,
-    padding: 'var(--space-xl) 0',
-  },
-  consoleLogLine: {
-    display: 'flex',
-    gap: 'var(--space-sm)',
-    whiteSpace: 'nowrap',
-  },
-  logTimestamp: {
-    color: 'var(--text-muted)',
-  },
-  logTag: {
-    color: 'var(--accent-cyan)',
-    fontWeight: 600,
-  },
-  logDevice: {
-    color: 'var(--accent-blue)',
-    fontWeight: 500,
-  },
-  logValue: {
     color: 'var(--text-secondary)',
   },
 };

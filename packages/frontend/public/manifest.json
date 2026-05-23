@@ -1,0 +1,16 @@
+{
+  "short_name": "GridPulse",
+  "name": "GridPulse Smart Energy Sentry",
+  "icons": [
+    {
+      "src": "/gridpulse_app_icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#08090d",
+  "theme_color": "#08090d",
+  "display": "standalone",
+  "orientation": "portrait"
+}

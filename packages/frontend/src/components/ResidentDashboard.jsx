@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { EnergyChart } from './EnergyChart';
 import { ApplianceCorrectionModal } from './ApplianceCorrectionModal';
 import { db } from '../db/indexedDB';
@@ -18,7 +18,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 
-export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatus }) => {
+export const ResidentDashboard = ({ recentTelemetry, liveLogs, socketStatus }) => {
   const [consentGranted, setConsentGranted] = useState(true);
   const [activeRange, setActiveRange] = useState('daily');
   const [historyData, setHistoryData] = useState([]);
@@ -30,10 +30,11 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
   const [correctionDevice, setCorrectionDevice] = useState(null);
 
   const telemetryCount = useLiveQuery(() => db.telemetryCache.count()) || 0;
-  const labelOverrides = useLiveQuery(() => db.applianceOverrides.toArray()) || [];
+  const labelOverrides = useLiveQuery(() => db.applianceOverrides.toArray());
 
   const labelOverrideMap = useMemo(() => {
-    return new Map(labelOverrides.map(o => [o.deviceId, o.correctedLabel]));
+    const overrides = labelOverrides || [];
+    return new Map(overrides.map(o => [o.deviceId, o.correctedLabel]));
   }, [labelOverrides]);
 
   useEffect(() => {
@@ -51,33 +52,26 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
     });
   }, []);
 
-  const fetchHistory = async () => {
-    setHistoryLoading(true);
-    try {
-      const token = localStorage.getItem('sre_token');
-      const response = await fetch(`http://localhost:3000/api/telemetry/history?range=${activeRange}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        setHistoryData(await response.json());
+  useEffect(() => { 
+    const fetchHistory = async () => {
+      Promise.resolve().then(() => setHistoryLoading(true));
+      try {
+        const token = localStorage.getItem('sre_token');
+        const response = await fetch(`http://localhost:3000/api/telemetry/history?range=${activeRange}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          setHistoryData(await response.json());
+        }
+      } catch (err) {
+        console.error('[ResidentDashboard] Error fetching telemetry history:', err);
+      } finally {
+        setHistoryLoading(false);
       }
-    } catch (err) {
-      console.error('[ResidentDashboard] Error fetching telemetry history:', err);
-    } finally {
-      setHistoryLoading(false);
-    }
-  };
+    };
 
-  useEffect(() => { fetchHistory(); }, [activeRange]);
-
-  const handleConsentUpdated = async (status) => {
-    setConsentGranted(status);
-    await db.consentSettings.put({
-      consentType: 'appliance_breakdown',
-      status: status ? 'Granted' : 'Revoked',
-      timestamp: new Date().toISOString()
-    });
-  };
+    fetchHistory(); 
+  }, [activeRange]);
 
   const handleSaveBudget = (e) => {
     e.preventDefault();
@@ -95,7 +89,9 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
     setCorrectionDevice(null);
   };
 
-  const clearLocalDB = async () => { await db.telemetryCache.clear(); };
+  const clearLocalDB = async () => { 
+    await db.telemetryCache.clear(); 
+  };
 
   const sortedDevices = useMemo(() => {
     return Object.values(recentTelemetry)
@@ -108,9 +104,14 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
     sortedDevices.forEach(dev => { if (dev.status === 'Active') totalKw += dev.loadKw; });
     const historicalKwhSum = historyData.reduce((sum, d) => sum + d.kwh, 0);
     const avgHistoricalKwh = historyData.length > 0 ? (historicalKwhSum / historyData.length) : 0;
+    
     let simulatedDailyKwh = 12.5;
-    if (activeRange === 'daily' && avgHistoricalKwh > 0) simulatedDailyKwh = avgHistoricalKwh;
-    else if (totalKw > 0) simulatedDailyKwh = totalKw * 8;
+    if (activeRange === 'daily' && avgHistoricalKwh > 0) {
+      simulatedDailyKwh = avgHistoricalKwh;
+    } else if (totalKw > 0) {
+      simulatedDailyKwh = totalKw * 8;
+    }
+    
     const simulatedMonthlyKwh = Math.round(simulatedDailyKwh * 30 * 10) / 10;
     let remaining = simulatedMonthlyKwh;
     let cost = 0;
@@ -170,7 +171,7 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
         <div className="surface-card" style={s.statCard}>
           <Cpu size={18} color="var(--accent-blue)" />
           <div>
-            <div style={s.statLabel}>Active Devices</div>
+            <div style={s.statLabel}>Active Plugs</div>
             <div style={s.statValue}>{sortedDevices.filter(d => d.status === 'Active').length}</div>
           </div>
         </div>
@@ -236,7 +237,7 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
           <div style={s.panelHeader}>
             <div style={s.chartTitleRow}>
               <Cpu size={16} color="var(--accent-blue)" />
-              <h3 style={s.sectionTitle}>Appliance Rankings</h3>
+              <h3 style={s.sectionTitle}>Appliance Rankings Preview</h3>
             </div>
             <span style={s.subtle}>Sorted by draw</span>
           </div>
@@ -299,7 +300,7 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
               <h3 style={s.sectionTitle}>Savings Tips</h3>
             </div>
             <div style={s.tipsList}>
-              {recommendations.map(rec => (
+              {recommendations.slice(0, 2).map(rec => (
                 <div key={rec.id} style={s.tipCard}>
                   <div style={s.tipHeader}>
                     <span style={s.tipBadge}>{rec.targetDevice}</span>
@@ -315,7 +316,7 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
           <section className="surface-card" style={s.panel}>
             <div style={s.chartTitleRow}>
               <Sliders size={16} color="var(--accent-amber)" />
-              <h3 style={s.sectionTitle}>Budget</h3>
+              <h3 style={s.sectionTitle}>Budget Configuration</h3>
             </div>
             <form onSubmit={handleSaveBudget} style={s.budgetForm}>
               <div style={s.inputWrapper}>
@@ -335,15 +336,15 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
 
           {/* System Diagnostics */}
           <section className="surface-card" style={s.panel}>
-            <h4 style={s.miniTitle}>System</h4>
+            <h4 style={s.miniTitle}>System Gateway</h4>
             <div style={s.sysRow}>
-              <div style={s.sysLabel}><Radio size={12} color="var(--text-muted)" /><span>Gateway</span></div>
+              <div style={s.sysLabel}><Radio size={12} color="var(--text-muted)" /><span>Gateway Stream</span></div>
               <span className={`badge ${socketStatus === 'Connected' ? 'badge-active' : 'badge-offline'}`} style={{ fontSize: '10px' }}>
                 {socketStatus}
               </span>
             </div>
             <div style={s.sysRow}>
-              <div style={s.sysLabel}><Database size={12} color="var(--text-muted)" /><span>Cache</span></div>
+              <div style={s.sysLabel}><Database size={12} color="var(--text-muted)" /><span>Local Cache</span></div>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {telemetryCount} pkts
               </span>
@@ -355,12 +356,12 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
         </div>
       </div>
 
-      {/* ── Terminal Feed (Full Width) ── */}
+      {/* ── Ingestion Feed (Full Width) ── */}
       <section className="surface-card" style={s.panel}>
         <div style={s.panelHeader}>
           <div style={s.chartTitleRow}>
             <Activity size={16} color="var(--accent-cyan)" />
-            <h3 style={s.sectionTitle}>Ingestion Feed</h3>
+            <h3 style={s.sectionTitle}>Live Ingestion Feed</h3>
           </div>
         </div>
         <div style={s.console}>
@@ -390,8 +391,6 @@ export const ResidentDashboard = ({ user, recentTelemetry, liveLogs, socketStatu
 
 const s = {
   container: { display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' },
-
-  // Stats strip
   statsStrip: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)' },
   statCard: {
     padding: 'var(--space-md) var(--space-lg)',
@@ -399,8 +398,6 @@ const s = {
   },
   statLabel: { fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em' },
   statValue: { fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '2px' },
-
-  // Warning
   warningBanner: {
     display: 'flex', gap: 'var(--space-md)', alignItems: 'flex-start',
     padding: 'var(--space-md) var(--space-lg)',
@@ -408,8 +405,6 @@ const s = {
     border: '1px solid rgba(244, 63, 94, 0.15)',
     borderRadius: 'var(--radius-md)',
   },
-
-  // Chart
   chartSection: { padding: 'var(--space-lg)' },
   chartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-lg)' },
   chartTitleRow: { display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' },
@@ -428,17 +423,11 @@ const s = {
     height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-sm)',
     background: 'var(--bg-input)', borderRadius: 'var(--radius-md)',
   },
-
-  // Two-column
   twoCol: { display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 'var(--space-lg)', alignItems: 'start' },
   rightStack: { display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' },
-
-  // Panel (generic)
   panel: { padding: 'var(--space-lg)' },
   panelHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' },
   subtle: { fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' },
-
-  // Device list
   deviceList: { display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' },
   deviceRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -471,8 +460,6 @@ const s = {
   unit: { fontSize: '10px', fontWeight: 500, color: 'var(--text-muted)' },
   voltageVal: { fontSize: '10px', color: 'var(--text-muted)' },
   emptyState: { padding: 'var(--space-xl)', textAlign: 'center' },
-
-  // Tips
   tipsList: { display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' },
   tipCard: {
     background: 'var(--bg-input)', border: '1px solid var(--border-subtle)',
@@ -485,8 +472,6 @@ const s = {
   },
   tipSavings: { fontSize: '11px', color: 'var(--accent-emerald)', fontWeight: 700 },
   tipText: { fontSize: '12px', lineHeight: '1.5', color: 'var(--text-secondary)', margin: 0 },
-
-  // Budget
   budgetForm: { display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-md)' },
   inputWrapper: {
     display: 'flex', alignItems: 'center',
@@ -510,8 +495,6 @@ const s = {
     display: 'flex', justifyContent: 'space-between',
     fontSize: '10px', color: 'var(--text-muted)', marginTop: 'var(--space-sm)',
   },
-
-  // System
   miniTitle: { margin: '0 0 var(--space-md) 0', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' },
   sysRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-sm)' },
   sysLabel: { display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)' },
@@ -522,8 +505,6 @@ const s = {
     fontFamily: 'var(--font-sans)',
     transition: 'all var(--duration-fast) ease',
   },
-
-  // Console
   console: {
     background: 'var(--bg-input)', border: '1px solid var(--border-subtle)',
     borderRadius: 'var(--radius-sm)', padding: 'var(--space-md)',

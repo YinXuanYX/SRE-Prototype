@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShieldCheck, Loader2 } from 'lucide-react';
 
 export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
@@ -43,7 +43,7 @@ export const ApplianceCorrectionModal = ({ device, onClose, onSave }) => {
       });
 
       if (response.ok) {
-        const payload = await response.json();
+        await response.json();
         // Invoke parent save callback with the corrected name
         onSave(device.deviceId, finalLabel);
       } else {

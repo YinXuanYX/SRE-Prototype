@@ -1,5 +1,13 @@
-import React, { useState } from 'react';
-import { Shield, Eye } from 'lucide-react';
+import { useState } from 'react';
+import { 
+  Shield, 
+  Eye, 
+  Home, 
+  Building, 
+  Layers, 
+  Terminal, 
+  Loader2 
+} from 'lucide-react';
 
 export const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('resident@example.com');
@@ -8,6 +16,48 @@ export const Login = ({ onLoginSuccess }) => {
   const [customMode, setCustomMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // Welcome transition state
+  const [welcomeUser, setWelcomeUser] = useState(null);
+
+  const presets = [
+    { 
+      email: 'resident@example.com', 
+      name: 'John Resident', 
+      role: 'Resident', 
+      label: 'Resident Hub',
+      icon: Home,
+      desc: 'Evaluate utility bill projections, track hourly usage charts, and manage privacy consent.',
+      color: 'var(--accent-blue)'
+    },
+    { 
+      email: 'admin@example.com', 
+      name: 'Sarah Admin', 
+      role: 'Admin', 
+      label: 'Landlord Panel',
+      icon: Building,
+      desc: 'Monitor real-time building demand statistics, map sub-metering zones, and manage alarms.',
+      color: 'var(--accent-emerald)'
+    },
+    { 
+      email: 'superadmin@example.com', 
+      name: 'David SuperAdmin', 
+      role: 'Super Admin', 
+      label: 'Command Center',
+      icon: Layers,
+      desc: 'Verify aggregated grid load balances across multi-property portfolio holdings and export reports.',
+      color: 'var(--accent-cyan)'
+    },
+    { 
+      email: 'support@example.com', 
+      name: 'Alex Support', 
+      role: 'Support', 
+      label: 'Support Desk',
+      icon: Terminal,
+      desc: 'Inspect network node latency states, view gateway errors, and pause WebSocket feeds.',
+      color: 'var(--accent-amber)'
+    }
+  ];
 
   const handlePresetSelect = (presetEmail, presetName, presetRole) => {
     setEmail(presetEmail);
@@ -42,32 +92,160 @@ export const Login = ({ onLoginSuccess }) => {
       }
 
       console.log('[Login] Successful SSO Token Ingestion:', data.accessToken);
-      onLoginSuccess(data.accessToken, data.user);
+      
+      // Trigger "Welcome" transition
+      setWelcomeUser(data.user);
+      
+      setTimeout(() => {
+        onLoginSuccess(data.accessToken, data.user);
+      }, 1800);
+
     } catch (err) {
       setErrorMsg(err.message || 'Failed to authenticate via SSO. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
 
-  const presets = [
-    { email: 'resident@example.com', name: 'John Resident', role: 'Resident', label: 'Resident' },
-    { email: 'admin@example.com', name: 'Sarah Admin', role: 'Admin', label: 'Landlord/Admin' },
-    { email: 'superadmin@example.com', name: 'David SuperAdmin', role: 'Super Admin', label: 'Super Admin' },
-    { email: 'support@example.com', name: 'Alex Support', role: 'Support', label: 'Support Desk' }
-  ];
+  if (welcomeUser) {
+    return (
+      <div className="animated-login-bg">
+        <style>{`
+          @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+          .animated-login-bg {
+            background: linear-gradient(-45deg, #05070f, #0c0f20, #08142a, #03060f);
+            background-size: 400% 400%;
+            animation: gradientBG 12s ease infinite;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            font-family: var(--font-sans);
+          }
+          .welcome-box {
+            background: rgba(13, 17, 30, 0.65);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl) var(--space-lg);
+            text-align: center;
+            max-width: 440px;
+            width: 90%;
+            box-shadow: var(--shadow-2xl);
+            animation: welcomeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+          @keyframes welcomeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          .welcome-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: var(--space-md) 0 var(--space-xs) 0;
+          }
+          .welcome-role {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: var(--space-lg);
+          }
+          .welcome-sub {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-lg);
+          }
+        `}</style>
+        <div className="welcome-box">
+          <Loader2 size={36} color="var(--accent-blue)" className="spin" style={{ margin: '0 auto' }} />
+          <h2 className="welcome-title">Welcome back, {welcomeUser.displayName}</h2>
+          <div className="welcome-role">{welcomeUser.role} Portal</div>
+          <p className="welcome-sub">Synchronizing cryptographic gateway logs and caching active telemetry streams...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={s.container}>
+    <div className="animated-login-bg">
+      <style>{`
+        @keyframes gradientBG {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .animated-login-bg {
+          background: linear-gradient(-45deg, #05070f, #0c0f20, #08142a, #03060f);
+          background-size: 400% 400%;
+          animation: gradientBG 12s ease infinite;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          font-family: var(--font-sans);
+          overflow-y: auto;
+          padding: var(--space-xl) 0;
+        }
+        .preset-card {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
+          padding: var(--space-md);
+          text-align: left;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          display: flex;
+          gap: var(--space-md);
+          width: 100%;
+        }
+        .preset-card:hover {
+          transform: translateY(-2px);
+          background: rgba(255, 255, 255, 0.04);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .preset-icon-box {
+          width: 36px;
+          height: 36px;
+          border-radius: var(--radius-sm);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+        .preset-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text-primary);
+        }
+        .preset-desc {
+          font-size: 11px;
+          color: var(--text-muted);
+          line-height: 1.4;
+          margin: 4px 0;
+        }
+        .preset-email {
+          font-size: 10px;
+          color: var(--accent-blue);
+          font-family: var(--font-mono);
+        }
+      `}</style>
+      
       <div className="surface-card animate-in" style={s.card}>
         <div style={s.glowHeader}>
           <div style={s.pulseDot} className="pulse" />
           <span style={s.glowText}>SMART TELEMETRY ENVIRONMENT</span>
         </div>
 
-        <h1 style={s.title}>Energy Command Center</h1>
+        <h1 style={s.title}>GridPulse Command Center</h1>
         <p style={s.subtitle}>
-          Secure PWA portal for building telemetry analytics, automated cost projections, and machine-learning diagnostics.
+          Secure PWA portal for high-frequency residential telemetry, real-time demand alerts, and dynamic billing analytics.
         </p>
 
         {errorMsg && (
@@ -81,19 +259,28 @@ export const Login = ({ onLoginSuccess }) => {
           <div style={s.presetList}>
             {presets.map((p) => {
               const isSelected = email === p.email && !customMode;
+              const Icon = p.icon;
               return (
                 <button
                   key={p.email}
                   onClick={() => handlePresetSelect(p.email, p.name, p.role)}
+                  className="preset-card"
                   style={{
-                    ...s.presetBtn,
-                    borderColor: isSelected ? 'var(--accent-blue)' : 'var(--border-primary)',
-                    background: isSelected ? 'var(--sidebar-active)' : 'transparent',
-                    color: isSelected ? 'var(--accent-blue)' : 'var(--text-secondary)',
+                    borderColor: isSelected ? p.color : 'var(--border-subtle)',
+                    background: isSelected ? 'rgba(255,255,255,0.03)' : 'transparent',
+                    boxShadow: isSelected ? `0 0 10px rgba(59, 130, 246, 0.05)` : 'none'
                   }}
                 >
-                  <span style={s.presetLabel}>{p.label}</span>
-                  <span style={s.presetEmail}>{p.email}</span>
+                  <div className="preset-icon-box" style={{ background: `color-mix(in srgb, ${p.color} 10%, transparent)` }}>
+                    <Icon size={18} color={p.color} />
+                  </div>
+                  <div>
+                    <div style={s.presetMetaRow}>
+                      <span className="preset-title">{p.label}</span>
+                    </div>
+                    <p className="preset-desc">{p.desc}</p>
+                    <span className="preset-email">{p.email}</span>
+                  </div>
                 </button>
               );
             })}
@@ -189,31 +376,25 @@ export const Login = ({ onLoginSuccess }) => {
 };
 
 const s = {
-  container: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexGrow: 1,
-    padding: 'var(--space-2xl) var(--space-md)',
-  },
   card: {
-    maxWidth: '500px',
+    maxWidth: '520px',
     width: '100%',
-    padding: 'var(--space-2xl) var(--space-xl)',
+    padding: 'var(--space-xl) var(--space-lg)',
     border: '1px solid var(--border-primary)',
     borderRadius: 'var(--radius-xl)',
-    boxShadow: 'var(--shadow-xl)',
-    background: 'var(--bg-surface)',
+    boxShadow: 'var(--shadow-2xl)',
+    background: 'rgba(13, 17, 30, 0.45)',
+    backdropFilter: 'blur(16px)',
   },
   glowHeader: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 'var(--space-sm)',
-    background: 'var(--sidebar-active)',
-    border: '1px solid var(--border-primary)',
+    background: 'rgba(59, 130, 246, 0.08)',
+    border: '1px solid rgba(59, 130, 246, 0.15)',
     padding: '6px 12px',
     borderRadius: 'var(--radius-full)',
-    marginBottom: 'var(--space-lg)',
+    marginBottom: 'var(--space-md)',
   },
   pulseDot: {
     width: '6px',
@@ -222,22 +403,22 @@ const s = {
     borderRadius: '50%',
   },
   glowText: {
-    fontSize: '10px',
+    fontSize: '9px',
     fontWeight: 700,
     color: 'var(--accent-blue)',
     letterSpacing: '0.08em',
   },
   title: {
-    fontSize: '28px',
+    fontSize: '24px',
     lineHeight: '1.2',
     fontWeight: 800,
-    marginBottom: 'var(--space-sm)',
+    marginBottom: '4px',
     color: 'var(--text-primary)',
   },
   subtitle: {
-    fontSize: '13px',
+    fontSize: '12px',
     color: 'var(--text-secondary)',
-    marginBottom: 'var(--space-xl)',
+    marginBottom: 'var(--space-lg)',
     lineHeight: '1.5',
     textAlign: 'center',
   },
@@ -253,10 +434,10 @@ const s = {
   },
   section: {
     textAlign: 'left',
-    marginBottom: 'var(--space-lg)',
+    marginBottom: 'var(--space-md)',
   },
   label: {
-    fontSize: '11px',
+    fontSize: '10px',
     fontWeight: 600,
     color: 'var(--text-muted)',
     textTransform: 'uppercase',
@@ -270,34 +451,13 @@ const s = {
     gap: 'var(--space-sm)',
     marginBottom: 'var(--space-md)',
   },
-  presetBtn: {
-    border: '1px solid',
-    borderRadius: 'var(--radius-sm)',
-    padding: '10px 14px',
-    textAlign: 'left',
-    cursor: 'pointer',
-    outline: 'none',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontFamily: 'var(--font-sans)',
-    transition: 'all var(--duration-fast) ease',
-  },
-  presetLabel: {
-    fontSize: '13px',
-    fontWeight: 600,
-  },
-  presetEmail: {
-    fontSize: '11px',
-    fontFamily: 'var(--font-mono)',
-  },
   customToggle: {
     background: 'transparent',
-    border: '1px dashed',
+    border: '1px dashed var(--border-subtle)',
     borderRadius: 'var(--radius-sm)',
     padding: '8px 12px',
     width: '100%',
-    fontSize: '12px',
+    fontSize: '11px',
     fontWeight: 600,
     cursor: 'pointer',
     textAlign: 'center',
@@ -329,7 +489,7 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     gap: 'var(--space-sm)',
-    margin: 'var(--space-lg) 0',
+    margin: 'var(--space-md) 0',
   },
   dividerText: {
     fontSize: '9px',
