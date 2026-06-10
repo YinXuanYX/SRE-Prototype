@@ -100,6 +100,18 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       return (found ? [found] : []) as T[];
     }
 
+    // Query 3b: Update User Role in mock store
+    // UPDATE users SET role = $1 WHERE id = $2
+    if (queryNormalized.includes('update users set role =')) {
+      const [role, id] = params;
+      const found = this.mockUsers.find(u => u.id === Number(id));
+      if (found) {
+        found.role = role;
+        return [found] as T[];
+      }
+      return [] as T[];
+    }
+
     // Query 4: Insert Consent Log
     // INSERT INTO consent_logs (user_id, consent_type, status, timestamp) VALUES ($1, $2, $3, NOW()) RETURNING *
     if (queryNormalized.includes('insert into consent_logs')) {

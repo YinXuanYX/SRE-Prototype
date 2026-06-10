@@ -43,6 +43,14 @@ export class AuthService {
         [email, name, assignedRole]
       );
       user = result[0];
+    } else if (requestedRole) {
+      // If user exists and a role is explicitly requested (e.g. from the Developer Role Switcher),
+      // update their role dynamically to ensure backend API authorization alignment.
+      const validRoles = ['Resident', 'Admin', 'Super Admin', 'Support'];
+      if (validRoles.includes(requestedRole)) {
+        await this.db.query('UPDATE users SET role = $1 WHERE id = $2', [requestedRole, user.id]);
+        user.role = requestedRole;
+      }
     }
 
     // Generate JWT Token

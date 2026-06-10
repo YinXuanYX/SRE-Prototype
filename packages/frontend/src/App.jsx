@@ -106,8 +106,34 @@ function App() {
     }
   };
 
-  const handleRoleSwitch = (newRole) => {
+  const handleRoleSwitch = async (newRole) => {
     setRoleOverride(newRole);
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/sso', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: user.email,
+          displayName: user.displayName,
+          role: newRole,
+          provider: 'Developer Switcher',
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[App] Session token updated for role:', newRole);
+        localStorage.setItem('sre_token', data.accessToken);
+        localStorage.setItem('sre_user', JSON.stringify(data.user));
+        setToken(data.accessToken);
+        setUser(data.user);
+        setRoleOverride(null); // Clear temporary override as user role is now synchronized
+      }
+    } catch (err) {
+      console.error('[App] Failed to update backend token for role switch:', err);
+    }
   };
 
   const activeRole = roleOverride || (user ? user.role : 'Resident');
